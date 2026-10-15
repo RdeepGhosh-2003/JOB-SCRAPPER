@@ -1,0 +1,166 @@
+{
+  "jobs": [
+    {
+      "id": 100101,
+      "internal_job_id": 900101,
+      "title": "Software Engineer II - Python/FastAPI",
+      "updated_at": "2026-03-20T14:32:00-04:00",
+      "requisition_id": "REQ-PY-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100101",
+      "metadata": [],
+      "location": {
+        "name": "San Francisco, CA / Remote"
+      },
+      "offices": [
+        { "id": 1, "name": "San Francisco", "location": "San Francisco, CA" }
+      ],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>We are seeking a Software Engineer II to develop high-throughput services using Python, FastAPI, Docker, and PostgreSQL. Remote eligible across US.</p>"
+    },
+    {
+      "id": 100102,
+      "internal_job_id": 900102,
+      "title": "Senior Backend Engineer",
+      "updated_at": "2026-03-20T15:00:00-04:00",
+      "requisition_id": "REQ-PY-02",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100102",
+      "metadata": [],
+      "location": {
+        "name": "New York, NY"
+      },
+      "offices": [
+        { "id": 2, "name": "New York", "location": "New York, NY" }
+      ],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Leading architecture and backend scaling with Python and Kubernetes.</p>"
+    },
+    {
+      "id": 100103,
+      "internal_job_id": 900103,
+      "title": "Staff Infrastructure Engineer",
+      "updated_at": "2026-03-21T10:15:00-04:00",
+      "requisition_id": "REQ-INFRA-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100103",
+      "metadata": [],
+      "location": {
+        "name": "Remote - US"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 102, "name": "Infrastructure", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Staff role guiding site reliability and platform resilience.</p>"
+    },
+    {
+      "id": 100104,
+      "internal_job_id": 900104,
+      "title": "Internal Tools Software Engineer",
+      "updated_at": "2026-03-21T11:00:00-04:00",
+      "requisition_id": "REQ-TOOLS-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100104",
+      "metadata": [],
+      "location": {
+        "name": "Remote"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Build internal developer tooling and CI/CD automation in Python and TypeScript.</p>"
+    },
+    {
+      "id": 100105,
+      "internal_job_id": 900105,
+      "title": "Software Engineering Intern - Summer 2026",
+      "updated_at": "2026-03-22T09:00:00-04:00",
+      "requisition_id": "REQ-INTERN-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100105",
+      "metadata": [],
+      "location": {
+        "name": "San Francisco, CA"
+      },
+      "offices": [
+        { "id": 1, "name": "San Francisco", "location": "San Francisco, CA" }
+      ],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Summer internship for undergraduate students learning Python and web frameworks.</p>"
+    },
+    {
+      "id": 100106,
+      "internal_job_id": 900106,
+      "title": "Lead Full Stack Engineer",
+      "updated_at": "2026-03-22T14:30:00-04:00",
+      "requisition_id": "REQ-LEAD-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100106",
+      "metadata": [],
+      "location": {
+        "name": "Austin, TX"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Lead technical teams building customer portals.</p>"
+    },
+    {
+      "id": 100107,
+      "internal_job_id": 900107,
+      "title": "C++ Systems Engineer",
+      "updated_at": "2026-03-23T08:00:00-04:00",
+      "requisition_id": "REQ-CPP-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100107",
+      "metadata": [],
+      "location": {
+        "name": "Remote"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 103, "name": "Core Systems", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Low latency systems programming in C++ and Linux kernel internals.</p>"
+    },
+    {
+      "id": 100108,
+      "internal_job_id": 900108,
+      "title": "Go / Golang Platform Developer",
+      "updated_at": "2026-03-23T11:20:00-04:00",
+      "requisition_id": "REQ-GO-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100108",
+      "metadata": [],
+      "location": {
+        "name": "Remote - US"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 101, "name": "Engineering", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Build cloud control planes using Go, Docker, and Kubernetes.</p>"
+    },
+    {
+      "id": 100109,
+      "internal_job_id": 900109,
+      "title": "Product Manager",
+      "updated_at": "2026-03-24T12:00:00-04:00",
+      "requisition_id": "REQ-PM-01",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/100109",
+      "metadata": [],
+      "location": {
+        "name": "Remote"
+      },
+      "offices": [],
+      "departments": [
+        { "id": 104, "name": "Product", "parent_id": null, "child_ids": [] }
+      ],
+      "content": "<p>Lead roadmap and cross-functional delivery.</p>"
+    }
+  ],
+  "meta": {
+    "total": 9
+  }
+}

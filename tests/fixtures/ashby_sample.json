@@ -1,0 +1,96 @@
+{
+  "apiVersion": "1.0",
+  "jobs": [
+    {
+      "id": "ash-2001",
+      "title": "Python Backend Engineer",
+      "department": "Engineering",
+      "team": "Core Platform",
+      "isRemote": true,
+      "location": "Remote - US",
+      "secondaryLocations": ["New York, NY", "San Francisco, CA"],
+      "publishedAt": "2026-03-15T10:00:00.000Z",
+      "isListed": true,
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/hooli/ash-2001",
+      "applyUrl": "https://jobs.ashbyhq.com/hooli/ash-2001/application",
+      "descriptionPlain": "We are looking for a Python Backend Engineer to scale our distributed systems with PostgreSQL, Redis, and FastAPI.",
+      "descriptionHtml": "<div><p>We are looking for a Python Backend Engineer to scale our distributed systems with PostgreSQL, Redis, and FastAPI.</p></div>",
+      "compensation": {
+        "compensationTierSummary": "$150,000 - $190,000 USD"
+      }
+    },
+    {
+      "id": "ash-2002",
+      "title": "VP of Engineering",
+      "department": "Leadership",
+      "team": "Executive",
+      "isRemote": true,
+      "location": "Remote",
+      "secondaryLocations": [],
+      "publishedAt": "2026-03-15T11:00:00.000Z",
+      "isListed": true,
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/hooli/ash-2002",
+      "applyUrl": "https://jobs.ashbyhq.com/hooli/ash-2002/application",
+      "descriptionPlain": "Executive leadership overseeing 50+ engineers.",
+      "descriptionHtml": "<div><p>Executive leadership overseeing 50+ engineers.</p></div>",
+      "compensation": {
+        "compensationTierSummary": "$250,000 - $350,000 USD"
+      }
+    },
+    {
+      "id": "ash-2003",
+      "title": "Software Engineer, Frontend",
+      "department": "Product",
+      "team": "Web",
+      "isRemote": false,
+      "location": "New York, NY",
+      "secondaryLocations": [],
+      "publishedAt": "2026-03-16T09:00:00.000Z",
+      "isListed": true,
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/hooli/ash-2003",
+      "applyUrl": "https://jobs.ashbyhq.com/hooli/ash-2003/application",
+      "descriptionPlain": "Building web interfaces in React and TypeScript.",
+      "descriptionHtml": "<div><p>Building web interfaces in React and TypeScript.</p></div>",
+      "compensation": null
+    },
+    {
+      "id": "ash-2004",
+      "title": "Junior Software Engineer",
+      "department": "Engineering",
+      "team": "Growth",
+      "isRemote": true,
+      "location": "Remote",
+      "secondaryLocations": [],
+      "publishedAt": "2026-03-16T14:00:00.000Z",
+      "isListed": true,
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/hooli/ash-2004",
+      "applyUrl": "https://jobs.ashbyhq.com/hooli/ash-2004/application",
+      "descriptionPlain": "Entry level software engineer. Technologies: Python, FastAPI, Docker, and SQL.",
+      "descriptionHtml": "<div><p>Entry level software engineer. Technologies: Python, FastAPI, Docker, and SQL.</p></div>",
+      "compensation": {
+        "compensationTierSummary": "$90,000 - $120,000 USD"
+      }
+    },
+    {
+      "id": "ash-2005",
+      "title": "Director of Product",
+      "department": "Product",
+      "team": "Leadership",
+      "isRemote": true,
+      "location": "Remote",
+      "secondaryLocations": [],
+      "publishedAt": "2026-03-17T12:00:00.000Z",
+      "isListed": true,
+      "employmentType": "FullTime",
+      "jobUrl": "https://jobs.ashbyhq.com/hooli/ash-2005",
+      "applyUrl": "https://jobs.ashbyhq.com/hooli/ash-2005/application",
+      "descriptionPlain": "Directing product strategy.",
+      "descriptionHtml": "<div><p>Directing product strategy.</p></div>",
+      "compensation": null
+    }
+  ]
+}

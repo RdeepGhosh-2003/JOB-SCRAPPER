@@ -1,0 +1,115 @@
+[
+  {
+    "id": "lev-1001",
+    "text": "Backend Developer (Python)",
+    "createdAt": 1774000000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1001",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1001/apply",
+    "categories": {
+      "commitment": "Full time",
+      "department": "Engineering",
+      "team": "Platform",
+      "location": "Remote - US",
+      "allLocations": ["Remote - US", "San Francisco, CA"]
+    },
+    "workplaceType": "remote",
+    "description": "<div><p>Join Initech as a Backend Developer! Requirements: 3+ years Python, Redis, Docker, FastAPI.</p></div>",
+    "descriptionPlain": "Join Initech as a Backend Developer! Requirements: 3+ years Python, Redis, Docker, FastAPI.",
+    "lists": [
+      {
+        "text": "Requirements",
+        "content": "<ul><li>3+ years Python</li><li>FastAPI, Docker, PostgreSQL</li></ul>"
+      }
+    ]
+  },
+  {
+    "id": "lev-1002",
+    "text": "Principal Architect",
+    "createdAt": 1774005000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1002",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1002/apply",
+    "categories": {
+      "commitment": "Full time",
+      "department": "Architecture",
+      "team": "CTO Office",
+      "location": "San Francisco, CA",
+      "allLocations": ["San Francisco, CA"]
+    },
+    "workplaceType": "onsite",
+    "description": "<div><p>Lead enterprise cloud architecture.</p></div>",
+    "descriptionPlain": "Lead enterprise cloud architecture.",
+    "lists": []
+  },
+  {
+    "id": "lev-1003",
+    "text": "Full Stack Developer",
+    "createdAt": 1774010000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1003",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1003/apply",
+    "categories": {
+      "commitment": "Full time",
+      "department": "Engineering",
+      "team": "Applications",
+      "location": "Boston, MA",
+      "allLocations": ["Boston, MA"]
+    },
+    "workplaceType": "hybrid",
+    "description": "<div><p>In this role, you will report to the Engineering Manager and build web apps with Python and TypeScript.</p></div>",
+    "descriptionPlain": "In this role, you will report to the Engineering Manager and build web apps with Python and TypeScript.",
+    "lists": []
+  },
+  {
+    "id": "lev-1004",
+    "text": "International Business Developer",
+    "createdAt": 1774015000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1004",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1004/apply",
+    "categories": {
+      "commitment": "Full time",
+      "department": "Operations",
+      "team": "Global Growth",
+      "location": "Remote",
+      "allLocations": ["Remote"]
+    },
+    "workplaceType": "remote",
+    "description": "<div><p>Expand global international partnerships.</p></div>",
+    "descriptionPlain": "Expand global international partnerships.",
+    "lists": []
+  },
+  {
+    "id": "lev-1005",
+    "text": "Data Engineering Co-op",
+    "createdAt": 1774020000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1005",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1005/apply",
+    "categories": {
+      "commitment": "Part time",
+      "department": "Data",
+      "team": "Analytics",
+      "location": "Remote",
+      "allLocations": ["Remote"]
+    },
+    "workplaceType": "remote",
+    "description": "<div><p>Co-op rotation for students.</p></div>",
+    "descriptionPlain": "Co-op rotation for students.",
+    "lists": []
+  },
+  {
+    "id": "lev-1006",
+    "text": ".NET / C# Backend Engineer",
+    "createdAt": 1774025000000,
+    "hostedUrl": "https://jobs.lever.co/initech/lev-1006",
+    "applyUrl": "https://jobs.lever.co/initech/lev-1006/apply",
+    "categories": {
+      "commitment": "Full time",
+      "department": "Engineering",
+      "team": "Services",
+      "location": "Remote",
+      "allLocations": ["Remote"]
+    },
+    "workplaceType": "remote",
+    "description": "<div><p>Backend microservices built with C# and .NET 8 core.</p></div>",
+    "descriptionPlain": "Backend microservices built with C# and .NET 8 core.",
+    "lists": []
+  }
+]

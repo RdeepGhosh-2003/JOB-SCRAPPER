@@ -1,0 +1,36 @@
+{
+  "total": 4,
+  "limit": 20,
+  "offset": 0,
+  "jobPostings": [
+    {
+      "title": "Software Engineer, Platform",
+      "externalPath": "/job/San-Jose-CA/Software-Engineer--Platform_JR101",
+      "locationsText": "San Jose, CA, USA / Remote",
+      "postedOn": "Posted Yesterday",
+      "bulletFields": ["JR101"]
+    },
+    {
+      "title": "Senior Staff Systems Engineer",
+      "externalPath": "/job/Austin-TX/Senior-Staff-Systems-Engineer_JR102",
+      "locationsText": "Austin, TX, USA",
+      "postedOn": "Posted 3 Days Ago",
+      "bulletFields": ["JR102"]
+    },
+    {
+      "title": "Good Governance Analyst",
+      "externalPath": "/job/Remote/Good-Governance-Analyst_JR103",
+      "locationsText": "Remote",
+      "postedOn": "Posted Today",
+      "bulletFields": ["JR103"]
+    },
+    {
+      "title": "Cloud Infrastructure Engineer",
+      "externalPath": "/job/Remote/Cloud-Infrastructure-Engineer_JR104",
+      "locationsText": "Remote, USA",
+      "postedOn": "Posted 5 Days Ago",
+      "bulletFields": ["JR104"]
+    }
+  ],
+  "facets": []
+}

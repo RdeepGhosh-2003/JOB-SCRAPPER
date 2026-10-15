@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Careers at Globex Corporation</title>
+    <!-- Structured Data for Jobs (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "JobPosting",
+          "title": "Software Engineer (Python/FastAPI)",
+          "description": "<p>Build high-performance microservices with Python, FastAPI, and PostgreSQL. Remote-first environment.</p>",
+          "datePosted": "2026-03-20",
+          "employmentType": "FULL_TIME",
+          "hiringOrganization": {
+            "@type": "Organization",
+            "name": "Globex Corporation",
+            "sameAs": "https://globex.example.com"
+          },
+          "jobLocation": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Remote",
+              "addressRegion": "US",
+              "addressCountry": "USA"
+            }
+          },
+          "url": "https://globex.example.com/careers/job/3001"
+        },
+        {
+          "@type": "JobPosting",
+          "title": "Principal Enterprise Architect",
+          "description": "<p>Oversee company-wide cloud migration and multi-cloud strategies.</p>",
+          "datePosted": "2026-03-21",
+          "employmentType": "FULL_TIME",
+          "hiringOrganization": {
+            "@type": "Organization",
+            "name": "Globex Corporation"
+          },
+          "jobLocation": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "New York",
+              "addressRegion": "NY"
+            }
+          },
+          "url": "https://globex.example.com/careers/job/3002"
+        }
+      ]
+    }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Work With Us at Globex</h1>
+        <p>Explore opportunities across our engineering and product teams.</p>
+    </header>
+
+    <main class="careers-container">
+        <!-- DOM Fallback Job Cards -->
+        <div class="job-list">
+            <div class="job-card" id="job-3001">
+                <h3 class="job-title">
+                    <a href="https://globex.example.com/careers/job/3001">Software Engineer (Python/FastAPI)</a>
+                </h3>
+                <span class="location">Remote, US</span>
+                <span class="department">Engineering</span>
+                <p class="description">Build high-performance microservices with Python, FastAPI, and PostgreSQL.</p>
+                <a class="apply-btn" href="https://globex.example.com/careers/job/3001/apply">Apply Now</a>
+            </div>
+
+            <div class="job-card" id="job-3002">
+                <h3 class="job-title">
+                    <a href="https://globex.example.com/careers/job/3002">Principal Enterprise Architect</a>
+                </h3>
+                <span class="location">New York, NY</span>
+                <span class="department">Architecture</span>
+                <p class="description">Oversee company-wide cloud migration.</p>
+                <a class="apply-btn" href="https://globex.example.com/careers/job/3002/apply">Apply Now</a>
+            </div>
+
+            <div class="job-card" id="job-3003">
+                <h3 class="job-title">
+                    <a href="https://globex.example.com/careers/job/3003">Internal Systems Specialist</a>
+                </h3>
+                <span class="location">Remote, US</span>
+                <span class="department">IT Operations</span>
+                <p class="description">Maintain internal systems and employee workstation setup.</p>
+                <a class="apply-btn" href="https://globex.example.com/careers/job/3003/apply">Apply Now</a>
+            </div>
+        </div>
+
+        <!-- Embedded ATS iframe example (for detector test) -->
+        <section class="embedded-board">
+            <h2>Partner Openings</h2>
+            <iframe src="https://boards.greenhouse.io/embed/job_board?for=globexembedded" width="100%" height="500"></iframe>
+        </section>
+    </main>
+</body>
+</html>
