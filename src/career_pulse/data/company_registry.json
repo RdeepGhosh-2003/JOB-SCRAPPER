@@ -1,0 +1,127 @@
+[
+  {
+    "name": "Deloitte",
+    "career_url": "https://deloitte.wd1.myworkdayjobs.com/en-US/Deloitte",
+    "ats": "workday"
+  },
+  {
+    "name": "Accenture",
+    "career_url": "https://accenture.wd3.myworkdayjobs.com/AccentureCareers",
+    "ats": "workday"
+  },
+  {
+    "name": "TCS",
+    "career_url": "https://www.tcs.com/careers",
+    "ats": "custom"
+  },
+  {
+    "name": "Infosys",
+    "career_url": "https://career.infosys.com",
+    "ats": "custom"
+  },
+  {
+    "name": "Wipro",
+    "career_url": "https://careers.wipro.com",
+    "ats": "custom"
+  },
+  {
+    "name": "Cognizant",
+    "career_url": "https://cognizant.wd1.myworkdayjobs.com/Cognizant_Careers",
+    "ats": "workday"
+  },
+  {
+    "name": "McKinsey",
+    "career_url": "https://www.mckinsey.com/careers",
+    "ats": "custom"
+  },
+  {
+    "name": "EY",
+    "career_url": "https://ey.wd3.myworkdayjobs.com/EYCareers",
+    "ats": "workday"
+  },
+  {
+    "name": "KPMG",
+    "career_url": "https://kpmg.wd3.myworkdayjobs.com/KPMG_Careers",
+    "ats": "workday"
+  },
+  {
+    "name": "PwC",
+    "career_url": "https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers",
+    "ats": "workday"
+  },
+  {
+    "name": "Google",
+    "career_url": "https://www.google.com/about/careers/applications/jobs/results",
+    "ats": "custom"
+  },
+  {
+    "name": "Microsoft",
+    "career_url": "https://careers.microsoft.com",
+    "ats": "custom"
+  },
+  {
+    "name": "Amazon",
+    "career_url": "https://www.amazon.jobs",
+    "ats": "custom"
+  },
+  {
+    "name": "Meta",
+    "career_url": "https://www.metacareers.com",
+    "ats": "custom"
+  },
+  {
+    "name": "Apple",
+    "career_url": "https://jobs.apple.com",
+    "ats": "custom"
+  },
+  {
+    "name": "IBM",
+    "career_url": "https://www.ibm.com/careers",
+    "ats": "custom"
+  },
+  {
+    "name": "Capgemini",
+    "career_url": "https://www.capgemini.com/careers",
+    "ats": "custom"
+  },
+  {
+    "name": "HCL",
+    "career_url": "https://www.hcltech.com/careers",
+    "ats": "custom"
+  },
+  {
+    "name": "Tech Mahindra",
+    "career_url": "https://careers.techmahindra.com",
+    "ats": "custom"
+  },
+  {
+    "name": "Stripe",
+    "career_url": "https://boards.greenhouse.io/stripe",
+    "ats": "greenhouse"
+  },
+  {
+    "name": "Shopify",
+    "career_url": "https://jobs.lever.co/shopify",
+    "ats": "lever"
+  },
+  {
+    "name": "Notion",
+    "career_url": "https://boards.greenhouse.io/notion",
+    "ats": "greenhouse"
+  },
+  {
+    "name": "Linear",
+    "career_url": "https://jobs.ashbyhq.com/linear",
+    "ats": "ashby"
+  },
+  {
+    "name": "Figma",
+    "career_url": "https://jobs.lever.co/figma",
+    "ats": "lever"
+  },
+  {
+    "name": "Netflix",
+    "career_url": "https://jobs.netflix.com",
+    "ats": "custom"
+  }
+]
