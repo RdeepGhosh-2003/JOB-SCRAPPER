@@ -91,13 +91,18 @@ async def test_filters_api(app):
 
 @pytest.mark.asyncio
 async def test_jobs_api(app):
-    """Verify paginated jobs listing endpoint."""
+    """Verify paginated jobs listing and deletion endpoints."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/jobs?limit=10")
         assert resp.status_code == 200
         data = resp.json()
         assert "total" in data
         assert "jobs" in data
+
+        # Test deleting non-existent job returns 404
+        del_resp = await client.delete("/api/jobs/999999999")
+        assert del_resp.status_code == 404
+
 
 
 @pytest.mark.asyncio

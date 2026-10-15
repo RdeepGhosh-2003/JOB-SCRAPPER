@@ -3,7 +3,7 @@ Job History & Feed REST Endpoints.
 """
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from career_pulse.config import settings
 from career_pulse.db.session import Database
 
@@ -72,3 +72,27 @@ async def list_jobs(
         "offset": offset,
         "jobs": jobs,
     }
+
+
+@router.delete("")
+async def clear_jobs(company_id: Optional[int] = Query(None)) -> Dict[str, Any]:
+    """Delete jobs, optionally filtered by company_id, or all jobs."""
+    async with await db.get_connection() as conn:
+        if company_id is not None:
+            cursor = await conn.execute("DELETE FROM jobs WHERE company_id = ?", (company_id,))
+        else:
+            cursor = await conn.execute("DELETE FROM jobs")
+        await conn.commit()
+        return {"success": True, "deleted_count": cursor.rowcount}
+
+
+@router.delete("/{job_id}")
+async def delete_job(job_id: int) -> Dict[str, Any]:
+    """Delete a specific job listing."""
+    async with await db.get_connection() as conn:
+        cursor = await conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+        await conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Job not found")
+        return {"success": True, "message": f"Job {job_id} deleted"}
+

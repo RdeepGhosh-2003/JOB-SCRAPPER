@@ -185,13 +185,52 @@ async function loadJobs() {
                     <td>${dateStr}</td>
                     <td>${alertBadge}</td>
                     <td>
-                        <a href="${escapeHtml(j.apply_url)}" target="_blank" class="btn btn-sm btn-primary">Apply ↗</a>
+                        <div class="flex-gap">
+                            <a href="${escapeHtml(j.apply_url)}" target="_blank" class="btn btn-sm btn-primary">Apply ↗</a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteJob(${j.id})">Delete</button>
+                        </div>
                     </td>
                 </tr>
             `;
         }).join("");
     } catch (e) {
         console.error("Error loading jobs:", e);
+    }
+}
+
+async function deleteJob(id) {
+    if (!confirm("Are you sure you want to delete this job listing?")) return;
+    try {
+        const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" }).then(r => r.json());
+        if (res.success) {
+            showToast("Job listing deleted", "info");
+            loadJobs();
+            loadOverview();
+        } else {
+            showToast(res.detail || "Failed to delete job", "error");
+        }
+    } catch (e) {
+        showToast("Failed to delete job", "error");
+    }
+}
+
+async function clearAllJobs() {
+    const compFilter = document.getElementById("job-company-filter").value;
+    const msg = compFilter
+        ? "Are you sure you want to delete all discovered jobs for the selected company?"
+        : "Are you sure you want to delete ALL discovered jobs?";
+    if (!confirm(msg)) return;
+
+    try {
+        let url = "/api/jobs";
+        if (compFilter) url += `?company_id=${compFilter}`;
+        const res = await fetch(url, { method: "DELETE" }).then(r => r.json());
+        showToast(`Deleted ${res.deleted_count || 0} job listings`, "info");
+        loadJobs();
+        loadOverview();
+        loadCompanies();
+    } catch (e) {
+        showToast("Failed to clear jobs", "error");
     }
 }
 
@@ -715,6 +754,11 @@ function setupEventHandlers() {
     document.getElementById("job-search-input").addEventListener("input", debounce(loadJobs, 300));
     document.getElementById("job-company-filter").addEventListener("change", loadJobs);
     document.getElementById("job-remote-only").addEventListener("change", loadJobs);
+
+    const btnClearJobs = document.getElementById("btn-clear-jobs");
+    if (btnClearJobs) {
+        btnClearJobs.addEventListener("click", clearAllJobs);
+    }
 
     // Company sort dropdown & table header sorting
     const companySortSelect = document.getElementById("company-sort-by");
