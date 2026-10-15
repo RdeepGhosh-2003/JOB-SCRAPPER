@@ -187,7 +187,7 @@ async function loadJobs() {
                     <td>
                         <div class="flex-gap">
                             <a href="${escapeHtml(j.apply_url)}" target="_blank" class="btn btn-sm btn-primary">Apply ↗</a>
-                            <button class="btn btn-sm btn-danger" onclick="deleteJob(${j.id})">Delete</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteJob(${j.id}, this)">Delete</button>
                         </div>
                     </td>
                 </tr>
@@ -198,18 +198,31 @@ async function loadJobs() {
     }
 }
 
-async function deleteJob(id) {
-    if (!confirm("Are you sure you want to delete this job listing?")) return;
+async function deleteJob(id, btnElement) {
+    const row = btnElement ? btnElement.closest("tr") : null;
+    if (row) {
+        row.style.opacity = "0.3";
+        row.style.pointerEvents = "none";
+    }
+
     try {
         const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" }).then(r => r.json());
         if (res.success) {
-            showToast("Job listing deleted", "info");
+            showToast("Job removed", "info");
             loadJobs();
             loadOverview();
         } else {
+            if (row) {
+                row.style.opacity = "1";
+                row.style.pointerEvents = "auto";
+            }
             showToast(res.detail || "Failed to delete job", "error");
         }
     } catch (e) {
+        if (row) {
+            row.style.opacity = "1";
+            row.style.pointerEvents = "auto";
+        }
         showToast("Failed to delete job", "error");
     }
 }
