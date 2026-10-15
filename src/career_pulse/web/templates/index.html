@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerPulse — Local Career Portal Job Tracker</title>
-    <link rel="stylesheet" href="/static/app.css?v=4">
+    <link rel="stylesheet" href="/static/app.css?v=5">
 </head>
 <body>
     <div class="app-layout">
@@ -247,19 +247,31 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header flex-between">
                         <h3>Monitored Target Companies</h3>
+                        <div class="flex-gap" style="align-items: center;">
+                            <label for="company-sort-by" class="text-sm text-muted">Sort by:</label>
+                            <select id="company-sort-by" class="form-select" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+                                <option value="recent">Recently Added (Default)</option>
+                                <option value="name_asc">Company Name (A → Z)</option>
+                                <option value="name_desc">Company Name (Z → A)</option>
+                                <option value="jobs_desc">Jobs Discovered (High → Low)</option>
+                                <option value="alerts_desc">Alerts Sent (High → Low)</option>
+                                <option value="last_scan_desc">Last Scan (Most Recent)</option>
+                            </select>
+                            <span id="companies-count-badge" class="badge">0 companies</span>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Company</th>
+                                    <th class="sortable-th" data-sort="name" title="Click to sort by Name">Company <span class="sort-icon">⇅</span></th>
                                     <th>ATS Provider</th>
                                     <th>Career URL</th>
-                                    <th>Jobs Discovered</th>
-                                    <th>Alerts Sent</th>
-                                    <th>Last Scan</th>
+                                    <th class="sortable-th" data-sort="jobs" title="Click to sort by Jobs Discovered">Jobs Discovered <span class="sort-icon">⇅</span></th>
+                                    <th class="sortable-th" data-sort="alerts" title="Click to sort by Alerts Sent">Alerts Sent <span class="sort-icon">⇅</span></th>
+                                    <th class="sortable-th" data-sort="last_scan" title="Click to sort by Last Scan">Last Scan <span class="sort-icon">⇅</span></th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -425,6 +437,6 @@
         </main>
     </div>
 
-    <script src="/static/app.js?v=4"></script>
+    <script src="/static/app.js?v=5"></script>
 </body>
 </html>

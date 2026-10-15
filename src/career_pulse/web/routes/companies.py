@@ -130,9 +130,9 @@ async def get_company_registry(q: str = Query(default="")) -> List[Dict[str, Any
         enriched.append(c_copy)
 
     if not query:
-        # For default (empty query), exclude already added companies so they don't clutter suggestions
-        unadded = [c for c in enriched if not c.get("already_added")]
-        return unadded[:10] if unadded else enriched[:10]
+        # Prioritize unadded companies first so they appear at top of suggestions, filling up to 10
+        sorted_by_unadded = sorted(enriched, key=lambda c: 1 if c.get("already_added") else 0)
+        return sorted_by_unadded[:10]
 
     matches = [c for c in enriched if query in c.get("name", "").lower()]
     return matches[:8]

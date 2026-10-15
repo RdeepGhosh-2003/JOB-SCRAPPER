@@ -399,6 +399,25 @@ body {
     background-color: var(--bg-surface-hover);
 }
 
+.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.sortable-th:hover {
+    color: var(--primary);
+    background-color: var(--bg-surface-hover);
+}
+
+.sort-icon {
+    font-size: 0.75rem;
+    margin-left: 0.3rem;
+    opacity: 0.6;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 /* Forms */
 .form-layout {
     display: flex;

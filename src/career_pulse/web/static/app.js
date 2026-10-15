@@ -196,36 +196,92 @@ async function loadJobs() {
 }
 
 // COMPANIES TAB
+let cachedCompanies = [];
+
+function sortCompanies(companies, sortBy) {
+    const list = [...companies];
+    switch (sortBy) {
+        case "name_asc":
+            return list.sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }));
+        case "name_desc":
+            return list.sort((a, b) => (b.name || "").localeCompare(a.name || "", undefined, { sensitivity: "base" }));
+        case "jobs_desc":
+            return list.sort((a, b) => (b.job_count || 0) - (a.job_count || 0));
+        case "jobs_asc":
+            return list.sort((a, b) => (a.job_count || 0) - (b.job_count || 0));
+        case "alerts_desc":
+            return list.sort((a, b) => (b.alerts_count || 0) - (a.alerts_count || 0));
+        case "alerts_asc":
+            return list.sort((a, b) => (a.alerts_count || 0) - (b.alerts_count || 0));
+        case "last_scan_desc":
+            return list.sort((a, b) => {
+                const timeA = a.last_scanned_at ? new Date(a.last_scanned_at).getTime() : 0;
+                const timeB = b.last_scanned_at ? new Date(b.last_scanned_at).getTime() : 0;
+                return timeB - timeA;
+            });
+        case "last_scan_asc":
+            return list.sort((a, b) => {
+                const timeA = a.last_scanned_at ? new Date(a.last_scanned_at).getTime() : 0;
+                const timeB = b.last_scanned_at ? new Date(b.last_scanned_at).getTime() : 0;
+                return timeA - timeB;
+            });
+        case "recent":
+        default:
+            return list.sort((a, b) => {
+                const timeA = a.created_at ? new Date(a.created_at).getTime() : (a.id || 0);
+                const timeB = b.created_at ? new Date(b.created_at).getTime() : (b.id || 0);
+                return timeB - timeA;
+            });
+    }
+}
+
+function renderCompaniesTable() {
+    const tbody = document.getElementById("companies-table-body");
+    const countBadge = document.getElementById("companies-count-badge");
+    const sortSelect = document.getElementById("company-sort-by");
+    const sortBy = sortSelect ? sortSelect.value : "recent";
+
+    if (countBadge) {
+        countBadge.textContent = `${cachedCompanies.length} ${cachedCompanies.length === 1 ? 'company' : 'companies'}`;
+    }
+
+    if (!cachedCompanies || cachedCompanies.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No target companies added yet.</td></tr>`;
+        return;
+    }
+
+    const sorted = sortCompanies(cachedCompanies, sortBy);
+
+    tbody.innerHTML = sorted.map(c => `
+        <tr>
+            <td><strong>${escapeHtml(c.name)}</strong></td>
+            <td><span class="badge badge-info">${escapeHtml(c.ats_provider)}</span></td>
+            <td><a href="${escapeHtml(c.career_url)}" target="_blank" class="btn-text">${escapeHtml(c.career_url.substring(0, 35))}...</a></td>
+            <td>${c.job_count || 0}</td>
+            <td>${c.alerts_count || 0}</td>
+            <td>${c.last_scanned_at ? new Date(c.last_scanned_at).toLocaleTimeString() : 'Never'}</td>
+            <td>
+                <button class="btn btn-sm btn-secondary" onclick="scanSingleCompany(${c.id})">Scan</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteCompany(${c.id})">Delete</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
 async function loadCompanies() {
     try {
         const companies = await fetch("/api/companies").then(r => r.json());
-        const tbody = document.getElementById("companies-table-body");
+        cachedCompanies = Array.isArray(companies) ? companies : [];
+
+        // Populate dropdown on jobs tab
         const select = document.getElementById("job-company-filter");
-
-        // Populate dropdown
-        select.innerHTML = `<option value="">All Companies</option>` + companies.map(c => `
-            <option value="${c.id}">${escapeHtml(c.name)}</option>
-        `).join("");
-
-        if (!companies || companies.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">No target companies added yet.</td></tr>`;
-            return;
+        if (select) {
+            select.innerHTML = `<option value="">All Companies</option>` + cachedCompanies.map(c => `
+                <option value="${c.id}">${escapeHtml(c.name)}</option>
+            `).join("");
         }
 
-        tbody.innerHTML = companies.map(c => `
-            <tr>
-                <td><strong>${escapeHtml(c.name)}</strong></td>
-                <td><span class="badge badge-info">${escapeHtml(c.ats_provider)}</span></td>
-                <td><a href="${escapeHtml(c.career_url)}" target="_blank" class="btn-text">${escapeHtml(c.career_url.substring(0, 35))}...</a></td>
-                <td>${c.job_count || 0}</td>
-                <td>${c.alerts_count || 0}</td>
-                <td>${c.last_scanned_at ? new Date(c.last_scanned_at).toLocaleTimeString() : 'Never'}</td>
-                <td>
-                    <button class="btn btn-sm btn-secondary" onclick="scanSingleCompany(${c.id})">Scan</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteCompany(${c.id})">Delete</button>
-                </td>
-            </tr>
-        `).join("");
+        renderCompaniesTable();
     } catch (e) {
         console.error("Error loading companies:", e);
     }
@@ -659,6 +715,37 @@ function setupEventHandlers() {
     document.getElementById("job-search-input").addEventListener("input", debounce(loadJobs, 300));
     document.getElementById("job-company-filter").addEventListener("change", loadJobs);
     document.getElementById("job-remote-only").addEventListener("change", loadJobs);
+
+    // Company sort dropdown & table header sorting
+    const companySortSelect = document.getElementById("company-sort-by");
+    if (companySortSelect) {
+        companySortSelect.addEventListener("change", () => {
+            renderCompaniesTable();
+        });
+    }
+
+    document.querySelectorAll(".sortable-th").forEach(th => {
+        th.addEventListener("click", () => {
+            const field = th.dataset.sort;
+            if (!companySortSelect) return;
+
+            const current = companySortSelect.value;
+            let nextSort = "recent";
+
+            if (field === "name") {
+                nextSort = current === "name_asc" ? "name_desc" : "name_asc";
+            } else if (field === "jobs") {
+                nextSort = current === "jobs_desc" ? "jobs_asc" : "jobs_desc";
+            } else if (field === "alerts") {
+                nextSort = current === "alerts_desc" ? "alerts_asc" : "alerts_desc";
+            } else if (field === "last_scan") {
+                nextSort = current === "last_scan_desc" ? "last_scan_asc" : "last_scan_desc";
+            }
+
+            companySortSelect.value = nextSort;
+            renderCompaniesTable();
+        });
+    });
 
     // Save buttons
     document.getElementById("btn-save-filters").addEventListener("click", saveFilters);
