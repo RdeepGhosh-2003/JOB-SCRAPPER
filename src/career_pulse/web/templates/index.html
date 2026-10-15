@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerPulse — Local Career Portal Job Tracker</title>
+    <link rel="stylesheet" href="/static/app.css?v=4">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2>CareerPulse</h2>
+                    <span class="subtext">Direct Portal Job Tracker</span>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <button class="nav-item active" data-tab="tab-overview">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Overview
+                </button>
+                <button class="nav-item" data-tab="tab-jobs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Discovered Jobs
+                </button>
+                <button class="nav-item" data-tab="tab-companies">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-3"/></svg>
+                    Companies
+                </button>
+                <button class="nav-item" data-tab="tab-filters">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    Matching Filters
+                </button>
+                <button class="nav-item" data-tab="tab-telegram">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    Telegram Alerts
+                </button>
+                <button class="nav-item" data-tab="tab-scheduler">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Scheduler & Hours
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-indicator">
+                    <span class="status-dot green"></span>
+                    <span id="scheduler-status-text">Scheduler Active</span>
+                </div>
+                <button id="theme-toggle" class="btn-icon" title="Toggle Dark/Light Mode">
+                    <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <span id="window-status-pill" class="badge badge-info">Checking operating window...</span>
+                </div>
+                <div class="topbar-actions">
+                    <button id="btn-quick-scan" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Scan All Portals Now</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Notification Toast Container -->
+            <div id="toast-container" class="toast-container"></div>
+
+            <!-- TAB 1: OVERVIEW -->
+            <section id="tab-overview" class="tab-panel active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-3"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Monitored Companies</span>
+                            <span class="stat-value" id="stat-companies">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Discovered Jobs</span>
+                            <span class="stat-value" id="stat-jobs">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Alerts Dispatched</span>
+                            <span class="stat-value" id="stat-alerts">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Next Scheduled Run</span>
+                            <span class="stat-value text-sm" id="stat-next-run">Calculating...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2col mt-4">
+                    <!-- Recent Matches Feed -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Matching Jobs</h3>
+                            <button class="btn-text" onclick="switchTab('tab-jobs')">View All →</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="overview-recent-jobs" class="job-list-compact">
+                                <p class="text-muted">No jobs matching current filters yet. Click "Scan All Portals Now" to fetch listings.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monitored Companies Quickview -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Monitored Career Portals</h3>
+                            <button class="btn-text" onclick="switchTab('tab-companies')">Manage Portals →</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="overview-companies-list" class="company-list-compact">
+                                <p class="text-muted">Loading target portals...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: DISCOVERED JOBS -->
+            <section id="tab-jobs" class="tab-panel">
+                <div class="card">
+                    <div class="card-header flex-between">
+                        <div class="filter-bar">
+                            <input type="text" id="job-search-input" class="form-input" placeholder="Search by title or company...">
+                            <select id="job-company-filter" class="form-select">
+                                <option value="">All Companies</option>
+                            </select>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="job-remote-only"> Remote Only
+                            </label>
+                        </div>
+                        <span id="jobs-count-badge" class="badge">0 jobs</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="jobs-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Job Title</th>
+                                        <th>Company</th>
+                                        <th>Location</th>
+                                        <th>Workplace</th>
+                                        <th>First Seen</th>
+                                        <th>Alert Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="jobs-table-body">
+                                    <tr><td colspan="7" class="text-center text-muted">No jobs discovered yet.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: COMPANIES -->
+            <section id="tab-companies" class="tab-panel">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Add Target Company Career Portal</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Mode A: Name Search (Default) -->
+                        <div class="registry-search-container">
+                            <div class="form-group registry-input-group">
+                                <label for="company-name-search">Company Name</label>
+                                <input type="text" id="company-name-search" class="form-input" placeholder="Type a company name, e.g. Deloitte, Accenture..." autocomplete="off">
+                                <div id="registry-suggestions" class="suggestions-dropdown hidden"></div>
+                            </div>
+
+                            <!-- Confirm Card (Hidden until company is selected) -->
+                            <div id="registry-confirm-card" class="registry-card hidden">
+                                <div class="registry-card-info">
+                                    <div class="registry-card-header">
+                                        <h4 id="registry-confirm-name">Company Name</h4>
+                                        <span id="registry-confirm-ats" class="badge badge-info">ATS</span>
+                                    </div>
+                                    <a id="registry-confirm-url" href="#" target="_blank" class="registry-confirm-url text-muted">https://...</a>
+                                </div>
+                                <button type="button" id="btn-add-from-registry" class="btn btn-primary">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Add Company →
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Toggle to Mode B -->
+                        <div class="manual-toggle-container mt-4">
+                            <button type="button" id="btn-show-manual" class="btn-text">Not finding it? Add manually with a URL ↓</button>
+                        </div>
+
+                        <!-- Mode B: Manual URL Form (Hidden by default) -->
+                        <div id="manual-add-section" class="manual-add-section hidden mt-4">
+                            <form id="add-company-form" class="form-grid">
+                                <div class="form-group">
+                                    <label for="company-name">Company Name</label>
+                                    <input type="text" id="company-name" class="form-input" placeholder="e.g. Stripe, Netflix, Linear" required>
+                                </div>
+                                <div class="form-group span-2">
+                                    <label for="company-url">Career Page / ATS URL</label>
+                                    <input type="url" id="company-url" class="form-input" placeholder="e.g. https://boards.greenhouse.io/stripe or https://jobs.ashbyhq.com/linear" required>
+                                </div>
+                                <div class="form-group flex-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Add & Auto-Detect ATS
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="detect-preview" class="detect-preview hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Monitored Target Companies</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>ATS Provider</th>
+                                    <th>Career URL</th>
+                                    <th>Jobs Discovered</th>
+                                    <th>Alerts Sent</th>
+                                    <th>Last Scan</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companies-table-body">
+                                <tr><td colspan="7" class="text-center text-muted">No companies added yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: MATCHING FILTERS -->
+            <section id="tab-filters" class="tab-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Configure Job Matching Rules</h3>
+                        <button id="btn-save-filters" class="btn btn-primary">Save Filters</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="filters-two-col" style="display: grid !important; grid-template-columns: minmax(0, 1fr) 380px !important; gap: 2rem !important; align-items: start !important; width: 100% !important;">
+                            <!-- Left: Basic Fields -->
+                            <div class="filters-main form-layout" style="max-width: 100% !important; width: 100% !important; min-width: 0 !important;">
+                                <div class="form-group">
+                                    <label>Target Job Titles (Comma separated)</label>
+                                    <input type="text" id="filter-target-titles" class="form-input" placeholder="Data Analyst, Business Analyst">
+                                    <span class="help-text">Lookaround regex will match these titles precisely without false positives.</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Required Skills (Comma separated)</label>
+                                    <input type="text" id="filter-required-skills" class="form-input" placeholder="Python, SQL, Tableau">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Strict Negative Keywords (Exclude from Title)</label>
+                                    <input type="text" id="filter-neg-titles" class="form-input" placeholder="Senior, Staff, Principal, Lead, Manager, Director, Intern, Internship">
+                                    <span class="help-text">Jobs containing these words in their title will be immediately rejected.</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Preferred Skills / Highlights (Comma separated)</label>
+                                    <input type="text" id="filter-preferred-skills" class="form-input" placeholder="PostgreSQL, Docker, Redis, TypeScript">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Allowed Locations (Comma separated)</label>
+                                    <input type="text" id="filter-allowed-locations" class="form-input" placeholder="Remote, United States, Anywhere">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="filter-remote-only"> Require 100% Remote Positions Only
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Right: Advanced Settings -->
+                            <div class="filters-advanced" style="position: sticky !important; top: 1rem !important; min-width: 0 !important; width: 100% !important;">
+                                <details class="accordion" open style="width: 100% !important;">
+                                    <summary>⚙ Advanced Settings</summary>
+                                    <div class="accordion-body">
+                                        <div class="form-group">
+                                            <label>Skills Match Mode</label>
+                                            <select id="filter-skills-mode" class="form-select">
+                                                <option value="any">Match ANY required skill (Recommended)</option>
+                                                <option value="all">Match ALL required skills</option>
+                                                <option value="none">Bypass skill checks (Title match only)</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Negative Description Keywords (Comma separated)</label>
+                                            <input type="text" id="filter-neg-desc" class="form-input" placeholder="10+ years, active security clearance, phd required">
+                                            <span class="help-text">Jobs containing these phrases anywhere in their description will be rejected.</span>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Excluded Locations (Comma separated)</label>
+                                            <input type="text" id="filter-excluded-locations" class="form-input" placeholder="Europe, London, Hybrid">
+                                            <span class="help-text">Jobs matching these locations will be rejected even if marked remote.</span>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: TELEGRAM ALERTS -->
+            <section id="tab-telegram" class="tab-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Telegram Notification Settings</h3>
+                        <button id="btn-save-telegram" class="btn btn-primary">Save Settings</button>
+                    </div>
+                    <div class="card-body form-layout">
+                        <div class="form-group">
+                            <label for="tg-bot-token">Telegram Bot Token</label>
+                            <input type="password" id="tg-bot-token" class="form-input" placeholder="e.g. 123456789:ABCdefGHIjkLMNopQRsTUVwxyZ">
+                            <span class="help-text">Create via @BotFather on Telegram.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tg-chat-id">Telegram Chat ID</label>
+                            <input type="text" id="tg-chat-id" class="form-input" placeholder="e.g. 987654321">
+                            <span class="help-text">Your user ID or channel ID. Send /start to @userinfobot to get your ID.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="tg-mock-mode"> Mock Mode (Record alerts locally without sending network requests to Telegram)
+                            </label>
+                        </div>
+
+                        <div class="mt-4 flex-gap">
+                            <button id="btn-test-telegram" class="btn btn-secondary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                                Send Test Notification Now
+                            </button>
+                            <span id="tg-test-status" class="test-status"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: SCHEDULER & HOURS -->
+            <section id="tab-scheduler" class="tab-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Laptop Sleep/Wake Resilient Scheduling</h3>
+                        <button id="btn-save-scheduler" class="btn btn-primary">Save Configuration</button>
+                    </div>
+                    <div class="card-body form-layout">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="sched-enabled" checked> Enable Background Polling Loop
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sched-interval">Scan Interval (Minutes)</label>
+                            <input type="number" id="sched-interval" class="form-input" value="60" min="5" max="360">
+                            <span class="help-text">How often CareerPulse checks all target company portals.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="sched-windows-enabled" checked> Restrict Scanning to Specified Operating Hours
+                            </label>
+                            <span class="help-text">Allows CareerPulse to respect when your laptop is opened (e.g. before 10 AM to 6:30 PM, and 7 PM to 2 AM).</span>
+                        </div>
+
+                        <div class="schedule-windows-section">
+                            <h4>Active Operating Windows</h4>
+                            <div id="windows-list" class="windows-list">
+                                <!-- Windows injected via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js?v=4"></script>
+</body>
+</html>
