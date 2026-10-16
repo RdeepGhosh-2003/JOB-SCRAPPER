@@ -1,7 +1,4 @@
-"""
-Scheduler Management REST Endpoints.
-"""
-
+import asyncio
 from typing import Any, Dict
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -40,3 +37,19 @@ async def update_scheduler_config(config: SchedulerConfig) -> Dict[str, Any]:
     """Update background schedule interval and time windows."""
     _scheduler.config = config
     return {"success": True, "message": "Scheduler configuration updated", "config": config}
+
+
+@router.post("/pause")
+async def pause_scheduler() -> Dict[str, Any]:
+    """Pause background scheduled scanning."""
+    _scheduler.config.enabled = False
+    return {"success": True, "message": "Scheduler paused"}
+
+
+@router.post("/resume")
+async def resume_scheduler() -> Dict[str, Any]:
+    """Resume background scheduled scanning and trigger catch-up scan."""
+    _scheduler.config.enabled = True
+    asyncio.create_task(_scheduler.trigger_now())
+    return {"success": True, "message": "Scheduler resumed, catch-up scan triggered"}
+

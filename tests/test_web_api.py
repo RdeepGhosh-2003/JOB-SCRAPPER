@@ -118,6 +118,32 @@ async def test_scheduler_api(app):
 
 
 @pytest.mark.asyncio
+async def test_scheduler_pause_resume_api(app):
+    """Verify scheduler pause and resume endpoints."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        p_resp = await client.post("/api/scheduler/pause")
+        assert p_resp.status_code == 200
+        p_data = p_resp.json()
+        assert p_data["success"] is True
+        assert p_data["message"] == "Scheduler paused"
+
+        status_resp = await client.get("/api/scheduler/status")
+        assert status_resp.status_code == 200
+        assert status_resp.json()["config"]["enabled"] is False
+
+        r_resp = await client.post("/api/scheduler/resume")
+        assert r_resp.status_code == 200
+        r_data = r_resp.json()
+        assert r_data["success"] is True
+        assert "Scheduler resumed" in r_data["message"]
+
+        status_resp2 = await client.get("/api/scheduler/status")
+        assert status_resp2.status_code == 200
+        assert status_resp2.json()["config"]["enabled"] is True
+
+
+
+@pytest.mark.asyncio
 async def test_logs_api(app):
     """Verify scan activity logs API endpoint."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
