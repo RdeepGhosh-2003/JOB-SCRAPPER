@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadTelegram();
     loadScheduler();
     loadLogs();
+    loadPipeline();
     setupEventHandlers();
 
     // Auto-refresh stats, scheduler status, and logs every 15s
@@ -55,6 +56,7 @@ function switchTab(tabId) {
 
     const titles = {
         "tab-overview": "Dashboard Overview",
+        "tab-pipeline": "Live Pipeline Monitor",
         "tab-jobs": "Discovered Jobs Feed",
         "tab-companies": "Target Career Portals",
         "tab-filters": "Job Matching Filters",
@@ -63,6 +65,10 @@ function switchTab(tabId) {
         "tab-logs": "Activity Logs",
     };
     document.getElementById("page-title").textContent = titles[tabId] || "CareerPulse";
+
+    if (tabId === "tab-pipeline") {
+        loadPipeline();
+    }
 }
 
 // Dark / Light Theme
@@ -663,13 +669,16 @@ function setupEventHandlers() {
         showToast("Scanning all target portals...", "info");
 
         try {
+            loadPipeline();
             const report = await fetch("/api/scan/trigger", { method: "POST" }).then(r => r.json());
             showToast(`Scan complete: ${report.companies_scanned} portals checked, ${report.total_jobs_found} jobs found, ${report.new_alerts_sent} alerts dispatched!`, "success");
             loadOverview();
             loadJobs();
             loadCompanies();
+            loadPipeline();
         } catch (e) {
             showToast(`Scan failed: ${e.message}`, "error");
+            loadPipeline();
         } finally {
             btn.disabled = false;
             btn.querySelector("span").textContent = "Scan All Portals Now";
@@ -959,5 +968,87 @@ async function loadLogs() {
     } catch (err) {
         console.error("Error loading scan logs:", err);
         tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Error loading activity logs. Check console.</td></tr>`;
+    }
+}
+
+// LIVE PIPELINE FLOWCHART TAB
+let pipelinePollTimer = null;
+
+async function loadPipeline() {
+    const flowContainer = document.getElementById("pipeline-flow");
+    const scanBadge = document.getElementById("pipeline-scan-badge");
+    const refreshText = document.getElementById("pipeline-refresh-text");
+    const refreshDot = document.getElementById("pipeline-refresh-dot");
+
+    try {
+        const res = await fetch("/api/pipeline/state");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // 1. Update dynamic scan badge (#pipeline-scan-badge)
+        if (scanBadge) {
+            if (data.is_scanning) {
+                scanBadge.className = "badge badge-primary pulse";
+                scanBadge.textContent = "SCANNING";
+            } else {
+                scanBadge.className = "badge badge-info";
+                scanBadge.textContent = "IDLE";
+            }
+        }
+
+        // 2. Render all 6 nodes with connecting arrows (↓)
+        if (flowContainer && data.nodes) {
+            const nodeOrder = ["scheduler", "companies", "adapter", "matcher", "database", "telegram"];
+            const fragments = [];
+
+            nodeOrder.forEach((key, idx) => {
+                const node = data.nodes[key];
+                if (!node) return;
+
+                const state = (node.state || "idle").toLowerCase();
+                const nodeClass = `pipeline-node node-${state}`;
+                const errorHtml = node.error
+                    ? `<div class="node-error-msg">⚠️ <strong>Failure:</strong> ${escapeHtml(node.error)}</div>`
+                    : "";
+
+                const cardHtml = `
+                    <div class="${nodeClass}">
+                        <div class="pipeline-node-header">
+                            <div class="pipeline-node-title-group">
+                                <span class="pipeline-node-dot"></span>
+                                <strong class="pipeline-node-title">${escapeHtml(node.label || key)}</strong>
+                            </div>
+                            <span class="pipeline-state-badge state-${state}">${escapeHtml(state.toUpperCase())}</span>
+                        </div>
+                        <div class="pipeline-node-detail">${escapeHtml(node.detail || "")}</div>
+                        ${errorHtml}
+                    </div>
+                `;
+
+                fragments.push(cardHtml);
+
+                if (idx < nodeOrder.length - 1) {
+                    fragments.push(`<div class="pipeline-connector">↓</div>`);
+                }
+            });
+
+            flowContainer.innerHTML = fragments.join("");
+        }
+
+        // 3. Dynamic polling: 3s if is_scanning: true, falling back to 15s when idle
+        const nextInterval = data.is_scanning ? 3000 : 15000;
+        if (refreshText) {
+            refreshText.textContent = data.is_scanning ? "Live Scan Polling: 3s" : "Auto-refresh: 15s";
+        }
+        if (refreshDot) {
+            refreshDot.className = data.is_scanning ? "status-dot green pulse" : "status-dot green";
+        }
+
+        if (pipelinePollTimer) clearTimeout(pipelinePollTimer);
+        pipelinePollTimer = setTimeout(loadPipeline, nextInterval);
+    } catch (err) {
+        console.error("Error loading pipeline flowchart:", err);
+        if (pipelinePollTimer) clearTimeout(pipelinePollTimer);
+        pipelinePollTimer = setTimeout(loadPipeline, 15000);
     }
 }

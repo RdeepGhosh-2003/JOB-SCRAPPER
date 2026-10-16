@@ -27,6 +27,10 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                     Overview
                 </button>
+                <button class="nav-item" data-tab="tab-pipeline">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Pipeline
+                </button>
                 <button class="nav-item" data-tab="tab-jobs">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     Discovered Jobs
@@ -155,6 +159,32 @@
                             <div id="overview-companies-list" class="company-list-compact">
                                 <p class="text-muted">Loading target portals...</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: LIVE PIPELINE MONITOR -->
+            <section id="tab-pipeline" class="tab-panel">
+                <div class="card">
+                    <div class="card-header flex-between">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <h3>Live Pipeline Monitor</h3>
+                            <span id="pipeline-scan-badge" class="badge badge-info">IDLE</span>
+                        </div>
+                        <div class="pipeline-header-actions" style="display: flex; align-items: center; gap: 1rem;">
+                            <span class="refresh-indicator" id="pipeline-refresh-indicator" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted);">
+                                <span class="status-dot green" id="pipeline-refresh-dot"></span>
+                                <span id="pipeline-refresh-text">Auto-refresh: 15s</span>
+                            </span>
+                            <button class="btn btn-secondary" onclick="loadPipeline()">
+                                ↻ Refresh Now
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="pipeline-flow" id="pipeline-flow">
+                            <p class="text-muted text-center py-4">Loading pipeline stages...</p>
                         </div>
                     </div>
                 </div>

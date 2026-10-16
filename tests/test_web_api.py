@@ -182,3 +182,101 @@ async def test_jobs_matched_only_api(app):
             assert j.get("alert_status") in ("sent", "mock")
 
 
+@pytest.mark.asyncio
+async def test_pipeline_state_api(app):
+    """Verify GET /api/pipeline/state returns 6 stages with required schema."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/pipeline/state")
+        assert resp.status_code == 200
+        data = resp.json()
+
+        assert "is_scanning" in data
+        assert isinstance(data["is_scanning"], bool)
+        assert "nodes" in data
+
+        expected_nodes = ["scheduler", "companies", "adapter", "matcher", "database", "telegram"]
+        for node_key in expected_nodes:
+            assert node_key in data["nodes"], f"Missing node: {node_key}"
+            node = data["nodes"][node_key]
+            assert "state" in node
+            assert node["state"] in ("running", "success", "error", "warning", "idle")
+            assert "label" in node and isinstance(node["label"], str) and len(node["label"]) > 0
+            assert "detail" in node and isinstance(node["detail"], str)
+            assert "meta" in node and isinstance(node["meta"], dict)
+            assert "error" in node
+
+
+@pytest.mark.asyncio
+async def test_pipeline_state_scanning_mode(app):
+    """Verify GET /api/pipeline/state reflects scanning mode when active."""
+    from career_pulse.web.routes import scan
+    original = scan._is_scanning
+    try:
+        scan._is_scanning = True
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.get("/api/pipeline/state")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["is_scanning"] is True
+            assert data["nodes"]["companies"]["state"] == "running"
+            assert data["nodes"]["adapter"]["state"] == "running"
+            assert data["nodes"]["matcher"]["state"] == "running"
+            assert data["nodes"]["database"]["state"] == "running"
+            assert data["nodes"]["telegram"]["state"] == "running"
+    finally:
+        scan._is_scanning = original
+
+
+@pytest.mark.asyncio
+async def test_pipeline_state_error_pinpointing(app):
+    """Verify stage-by-stage error pinpointing when a failure is detected in database."""
+    db = Database(settings.db_path)
+    async with await db.get_connection() as conn:
+        cursor = await conn.execute(
+            """
+            INSERT INTO companies (name, career_url, ats_provider, identifier, url, provider, scan_status, last_error)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "Failing Pipeline Test Inc",
+                "https://failing-test.example.com",
+                "greenhouse",
+                "failing-test",
+                "https://failing-test.example.com",
+                "greenhouse",
+                "failed",
+                "HTTP 503 Service Unavailable",
+            ),
+        )
+        await conn.commit()
+        comp_id = cursor.lastrowid
+
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.get("/api/pipeline/state")
+            assert resp.status_code == 200
+            data = resp.json()
+            comp_node = data["nodes"]["companies"]
+            assert comp_node["state"] in ("error", "warning")
+            assert comp_node["error"] is not None
+            assert "503" in comp_node["error"]
+    finally:
+        async with await db.get_connection() as conn:
+            await conn.execute("DELETE FROM companies WHERE id = ?", (comp_id,))
+            await conn.commit()
+
+
+@pytest.mark.asyncio
+async def test_pipeline_dashboard_html_elements(app):
+    """Verify dashboard HTML contains the pipeline tab button, tab panel, badge, and flow container."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/")
+        assert resp.status_code == 200
+        html = resp.text
+        assert 'data-tab="tab-pipeline"' in html
+        assert 'id="tab-pipeline"' in html
+        assert 'id="pipeline-flow"' in html
+        assert 'id="pipeline-scan-badge"' in html
+        assert "Live Pipeline Monitor" in html
+
+
