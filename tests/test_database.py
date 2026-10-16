@@ -347,3 +347,43 @@ async def test_scan_logs_persistence_and_purge(temp_db: Database):
     assert all_logs[0]["company_name"] == "Company 204"
     assert all_logs[-1]["company_name"] == "Company 5"
 
+
+@pytest.mark.asyncio
+async def test_overview_stats_calculation(temp_db: Database):
+    """Verify aggregated metrics: matched_today, jobs_rejected, last_scan, match_rate."""
+    company_id = await temp_db.add_company("StatsCorp", "https://stats.com", "greenhouse")
+
+    # Add 4 jobs
+    j1 = JobListing(external_id="s-1", company_name="StatsCorp", provider="greenhouse", title="Job 1", location="Remote", url="https://stats.com/1")
+    j2 = JobListing(external_id="s-2", company_name="StatsCorp", provider="greenhouse", title="Job 2", location="Remote", url="https://stats.com/2")
+    j3 = JobListing(external_id="s-3", company_name="StatsCorp", provider="greenhouse", title="Job 3", location="Remote", url="https://stats.com/3")
+    j4 = JobListing(external_id="s-4", company_name="StatsCorp", provider="greenhouse", title="Job 4", location="Remote", url="https://stats.com/4")
+
+    id1, _ = await temp_db.upsert_job(company_id, j1)
+    id2, _ = await temp_db.upsert_job(company_id, j2)
+    id3, _ = await temp_db.upsert_job(company_id, j3)
+    id4, _ = await temp_db.upsert_job(company_id, j4)
+
+    # Reserve & finalize alert for j1 (sent)
+    await temp_db.reserve_alert_slot(id1, "telegram")
+    await temp_db.finalize_alert_status(id1, "telegram", "sent")
+
+    # Log a scan
+    await temp_db.write_scan_log(
+        company_name="StatsCorp",
+        company_id=company_id,
+        provider="greenhouse",
+        jobs_found=4,
+        jobs_matched=1,
+        alerts_sent=1,
+        duration_seconds=1.5,
+        status="success",
+    )
+
+    stats = await temp_db.get_overview_stats()
+    assert stats["matched_today"] == 1
+    assert stats["jobs_rejected"] == 3  # id2, id3, id4 have no alert
+    assert stats["last_scan"]["company_name"] == "StatsCorp"
+    assert stats["match_rate"] == 25.0  # 1/4 * 100
+
+

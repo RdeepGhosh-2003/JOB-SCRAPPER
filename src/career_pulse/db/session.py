@@ -385,3 +385,82 @@ class Database:
                 rows = await cursor.fetchall()
                 return [dict(r) for r in rows]
 
+    async def get_overview_stats(self) -> Dict[str, Any]:
+        """Compute aggregated statistics for the overview dashboard."""
+        async with await self.get_connection() as conn:
+            # 1. matched_today: count of jobs where first_seen_at >= today's date AND alert_status IN ('sent', 'mock')
+            async with conn.execute(
+                """
+                SELECT COUNT(DISTINCT j.id) as cnt
+                FROM jobs j
+                JOIN alerts_history a ON a.job_id = j.id
+                WHERE (date(j.first_seen_at) >= date('now') OR date(j.first_seen_at, 'localtime') >= date('now', 'localtime'))
+                  AND a.status IN ('sent', 'mock')
+                """
+            ) as cur:
+                row = await cur.fetchone()
+                matched_today = int(row["cnt"]) if row else 0
+
+            # 2. jobs_rejected: total jobs in DB that have NO matching alert
+            async with conn.execute(
+                """
+                SELECT COUNT(j.id) as cnt
+                FROM jobs j
+                LEFT JOIN alerts_history a ON a.job_id = j.id
+                WHERE a.id IS NULL
+                """
+            ) as cur:
+                row = await cur.fetchone()
+                jobs_rejected = int(row["cnt"]) if row else 0
+
+            # 3. last_scan: object with company_name and scanned_at from scan_logs (or companies fallback)
+            last_scan: Optional[Dict[str, Any]] = None
+            try:
+                async with conn.execute(
+                    "SELECT company_name, scanned_at FROM scan_logs ORDER BY id DESC LIMIT 1"
+                ) as cur:
+                    row = await cur.fetchone()
+                    if row:
+                        last_scan = {"company_name": row["company_name"], "scanned_at": row["scanned_at"]}
+            except Exception:
+                pass
+
+            if not last_scan:
+                async with conn.execute(
+                    """
+                    SELECT name as company_name, last_scanned_at as scanned_at
+                    FROM companies
+                    WHERE last_scanned_at IS NOT NULL
+                    ORDER BY last_scanned_at DESC LIMIT 1
+                    """
+                ) as cur:
+                    row = await cur.fetchone()
+                    if row:
+                        last_scan = {"company_name": row["company_name"], "scanned_at": row["scanned_at"]}
+                    else:
+                        last_scan = {"company_name": "None", "scanned_at": None}
+
+            # 4. match_rate: (total jobs that have an alert / total jobs) * 100, rounded to 1 decimal
+            async with conn.execute("SELECT COUNT(*) as total FROM jobs") as cur:
+                row = await cur.fetchone()
+                total_jobs = int(row["total"]) if row else 0
+
+            async with conn.execute(
+                "SELECT COUNT(DISTINCT job_id) as alerted FROM alerts_history WHERE status IN ('sent', 'mock')"
+            ) as cur:
+                row = await cur.fetchone()
+                alerted_jobs = int(row["alerted"]) if row else 0
+
+            if total_jobs > 0:
+                match_rate = round((alerted_jobs / total_jobs) * 100, 1)
+            else:
+                match_rate = 0.0
+
+            return {
+                "matched_today": matched_today,
+                "jobs_rejected": jobs_rejected,
+                "last_scan": last_scan,
+                "match_rate": match_rate,
+            }
+
+

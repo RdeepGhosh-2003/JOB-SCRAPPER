@@ -82,63 +82,116 @@ function initTheme() {
 // OVERVIEW TAB
 async function loadOverview() {
     try {
-        const [compRes, jobsRes, schedRes] = await Promise.all([
+        const [compRes, jobsRes, schedRes, statsRes] = await Promise.all([
             fetch("/api/companies").then(r => r.json()),
-            fetch("/api/jobs?limit=5").then(r => r.json()),
+            fetch("/api/jobs?limit=5&matched_only=true").then(r => r.json()),
             fetch("/api/scheduler/status").then(r => r.json()),
+            fetch("/api/overview/stats").then(r => r.json()),
         ]);
 
-        document.getElementById("stat-companies").textContent = compRes.length;
-        document.getElementById("stat-jobs").textContent = jobsRes.total;
+        // 1. Matched Today
+        const elMatchedToday = document.getElementById("stat-matched-today");
+        if (elMatchedToday) elMatchedToday.textContent = statsRes.matched_today || 0;
 
-        let totalAlerts = 0;
-        compRes.forEach(c => totalAlerts += (c.alerts_count || 0));
-        document.getElementById("stat-alerts").textContent = totalAlerts;
+        // 2. Rejected
+        const elRejected = document.getElementById("stat-rejected");
+        if (elRejected) elRejected.textContent = statsRes.jobs_rejected || 0;
 
-        // Next run
-        if (schedRes.next_run_at) {
-            const nextDt = new Date(schedRes.next_run_at);
-            document.getElementById("stat-next-run").textContent = nextDt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else {
-            document.getElementById("stat-next-run").textContent = schedRes.is_running ? "Idle" : "Disabled";
+        // 3. Last Scan (Company + Time)
+        const elLastScanComp = document.getElementById("stat-last-scan-company");
+        const elLastScanTime = document.getElementById("stat-last-scan-time");
+        if (elLastScanComp && elLastScanTime) {
+            if (statsRes.last_scan && statsRes.last_scan.company_name && statsRes.last_scan.company_name !== "None") {
+                elLastScanComp.textContent = statsRes.last_scan.company_name;
+                elLastScanTime.textContent = formatRelativeTime(statsRes.last_scan.scanned_at);
+            } else {
+                elLastScanComp.textContent = "—";
+                elLastScanTime.textContent = "Never";
+            }
+        }
+
+        // 4. Match Rate
+        const elMatchRate = document.getElementById("stat-match-rate");
+        if (elMatchRate) {
+            const rate = typeof statsRes.match_rate === "number" ? statsRes.match_rate.toFixed(1) : "0.0";
+            elMatchRate.textContent = `${rate}%`;
         }
 
         // Window pill
         const pill = document.getElementById("window-status-pill");
-        if (schedRes.in_active_window) {
-            pill.className = "badge badge-success";
-            pill.textContent = "Operating Window Active";
-        } else {
-            pill.className = "badge badge-warning";
-            pill.textContent = "Outside Operating Hours";
+        if (pill) {
+            if (schedRes.in_active_window) {
+                pill.className = "badge badge-success";
+                pill.textContent = "Operating Window Active";
+            } else {
+                pill.className = "badge badge-warning";
+                pill.textContent = "Outside Operating Hours";
+            }
         }
 
-        // Recent Jobs list in overview
+        // Recent Matching Jobs panel
         const recentContainer = document.getElementById("overview-recent-jobs");
-        if (jobsRes.jobs && jobsRes.jobs.length > 0) {
-            recentContainer.innerHTML = jobsRes.jobs.map(j => `
-                <div class="window-item mb-2">
-                    <div>
-                        <strong>${escapeHtml(j.title)}</strong>
-                        <div class="subtext text-muted">${escapeHtml(j.company_name)} • ${escapeHtml(j.location || 'Unknown')}</div>
+        if (recentContainer) {
+            if (jobsRes.jobs && jobsRes.jobs.length > 0) {
+                recentContainer.innerHTML = jobsRes.jobs.map(j => `
+                    <div class="window-item mb-2" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${escapeHtml(j.title)}</strong>
+                            <div class="subtext text-muted">${escapeHtml(j.company_name)} • ${escapeHtml(j.location || 'Unknown')}</div>
+                        </div>
+                        <a href="${escapeHtml(j.apply_url || j.url)}" target="_blank" class="btn btn-sm btn-primary">Apply →</a>
                     </div>
-                    <a href="${escapeHtml(j.apply_url)}" target="_blank" class="btn btn-sm btn-primary">Apply →</a>
-                </div>
-            `).join("");
+                `).join("");
+            } else {
+                recentContainer.innerHTML = `<p class="text-muted">No matched jobs yet — run a scan to see results here.</p>`;
+            }
         }
 
-        // Recent Companies in overview
+        // Last Scan Summary: Max 6 companies ordered by last_scanned_at DESC
         const compContainer = document.getElementById("overview-companies-list");
-        if (compRes.length > 0) {
-            compContainer.innerHTML = compRes.slice(0, 5).map(c => `
-                <div class="window-item mb-2">
-                    <div>
-                        <strong>${escapeHtml(c.name)}</strong>
-                        <span class="badge badge-info ml-2">${escapeHtml(c.ats_provider)}</span>
-                    </div>
-                    <span class="text-muted">${c.job_count || 0} jobs</span>
-                </div>
-            `).join("");
+        if (compContainer) {
+            if (compRes && compRes.length > 0) {
+                const sorted = [...compRes].sort((a, b) => {
+                    const tA = a.last_scanned_at ? new Date(a.last_scanned_at.endsWith("Z") ? a.last_scanned_at : a.last_scanned_at + "Z").getTime() : 0;
+                    const tB = b.last_scanned_at ? new Date(b.last_scanned_at.endsWith("Z") ? b.last_scanned_at : b.last_scanned_at + "Z").getTime() : 0;
+                    return tB - tA;
+                });
+                const top6 = sorted.slice(0, 6);
+
+                compContainer.innerHTML = top6.map(c => {
+                    let statusBadge = `<span class="badge badge-neutral">—</span>`;
+                    if (c.last_scanned_at) {
+                        if (c.scan_status === 'success') {
+                            statusBadge = `<span class="badge badge-success" title="Scan succeeded">✅</span>`;
+                        } else if (c.scan_status === 'failed') {
+                            statusBadge = `<span class="badge badge-danger" title="${escapeHtml(c.last_error || 'Scan failed')}">❌</span>`;
+                        }
+                    }
+                    const relativeTime = formatRelativeTime(c.last_scanned_at);
+                    const jobsCount = c.job_count || 0;
+                    const jobsText = `${jobsCount} ${jobsCount === 1 ? 'job' : 'jobs'} found`;
+
+                    return `
+                        <div class="window-item mb-2" style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem; min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                    <strong>${escapeHtml(c.name)}</strong>
+                                    <span class="badge badge-info">${escapeHtml((c.ats_provider || 'custom').toUpperCase())}</span>
+                                    ${statusBadge}
+                                </div>
+                                <div class="subtext text-muted" style="font-size: 0.78rem;">
+                                    Scanned ${escapeHtml(relativeTime)}
+                                </div>
+                            </div>
+                            <div style="text-align: right; white-space: nowrap; font-size: 0.85rem; font-weight: 500;">
+                                <span class="text-muted">${escapeHtml(jobsText)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } else {
+                compContainer.innerHTML = `<p class="text-muted">No monitored portals registered yet.</p>`;
+            }
         }
     } catch (e) {
         console.error("Error loading overview:", e);
@@ -830,6 +883,23 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function formatRelativeTime(dateStr) {
+    if (!dateStr) return "Never";
+    let date = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
+    if (isNaN(date.getTime())) {
+        date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "Never";
+    }
+    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (diffSec < 0 || diffSec < 60) return "Just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
 // ACTIVITY LOGS TAB

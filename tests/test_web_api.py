@@ -126,3 +126,33 @@ async def test_logs_api(app):
         data = resp.json()
         assert isinstance(data, list)
 
+
+@pytest.mark.asyncio
+async def test_overview_stats_api(app):
+    """Verify GET /api/overview/stats returns matched_today, jobs_rejected, last_scan, match_rate."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/overview/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "matched_today" in data
+        assert "jobs_rejected" in data
+        assert "last_scan" in data
+        assert "match_rate" in data
+        assert isinstance(data["matched_today"], int)
+        assert isinstance(data["jobs_rejected"], int)
+        assert isinstance(data["match_rate"], (int, float))
+
+
+@pytest.mark.asyncio
+async def test_jobs_matched_only_api(app):
+    """Verify GET /api/jobs with matched_only=true filter."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/jobs?limit=10&matched_only=true")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "total" in data
+        assert "jobs" in data
+        for j in data["jobs"]:
+            assert j.get("alert_status") in ("sent", "mock")
+
+

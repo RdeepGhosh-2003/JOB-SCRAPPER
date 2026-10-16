@@ -16,6 +16,8 @@ async def list_jobs(
     company_id: Optional[int] = Query(None),
     is_remote: Optional[bool] = Query(None),
     q: Optional[str] = Query(None, description="Search query for title or company"),
+    matched_only: Optional[bool] = Query(None, description="Filter only matching jobs that triggered an alert"),
+    alert_status: Optional[str] = Query(None, description="Filter by specific alert status"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> Dict[str, Any]:
@@ -31,6 +33,12 @@ async def list_jobs(
         conditions.append("j.is_remote = ?")
         params.append(1 if is_remote else 0)
 
+    if matched_only:
+        conditions.append("a.status IN ('sent', 'mock')")
+    elif alert_status:
+        conditions.append("a.status = ?")
+        params.append(alert_status)
+
     if q and q.strip():
         search_term = f"%{q.strip()}%"
         conditions.append("(j.title LIKE ? OR c.name LIKE ? OR j.description_text LIKE ?)")
@@ -44,6 +52,7 @@ async def list_jobs(
             SELECT COUNT(j.id) as total
             FROM jobs j
             JOIN companies c ON c.id = j.company_id
+            LEFT JOIN alerts_history a ON a.job_id = j.id AND a.channel = 'telegram'
             WHERE {where_clause}
         """
         async with conn.execute(count_query, tuple(params)) as cur:

@@ -336,10 +336,16 @@ body {
 .stat-icon.blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
 .stat-icon.green { background: rgba(52, 211, 153, 0.15); color: #34d399; }
 .stat-icon.orange { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+.stat-icon.red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
 
 .stat-info {
     display: flex;
     flex-direction: column;
+}
+
+.stat-subtext {
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .stat-label {
