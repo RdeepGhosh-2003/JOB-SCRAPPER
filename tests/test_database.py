@@ -318,3 +318,32 @@ async def test_foreign_key_cascading_delete(temp_db: Database):
     # Job and alert must be deleted via cascade
     assert await temp_db.get_job_by_id(job_id) is None
     assert await temp_db.get_alert(job_id, "telegram") is None
+
+
+@pytest.mark.asyncio
+async def test_scan_logs_persistence_and_purge(temp_db: Database):
+    """Verify scan logs writing, limit retrieval, and retention pruning to 200 items."""
+    # Write 205 log entries
+    for i in range(205):
+        await temp_db.write_scan_log(
+            company_name=f"Company {i}",
+            company_id=1,
+            provider="greenhouse",
+            jobs_found=5,
+            jobs_matched=1 if i % 2 == 0 else 0,
+            alerts_sent=1 if i % 2 == 0 else 0,
+            duration_seconds=1.25,
+            status="success" if i % 2 == 0 else "warning",
+        )
+
+    # Retrieval respects limit
+    logs_50 = await temp_db.get_scan_logs(limit=50)
+    assert len(logs_50) == 50
+    assert logs_50[0]["company_name"] == "Company 204"
+
+    # Total entries must not exceed 200 due to automatic pruning
+    all_logs = await temp_db.get_scan_logs(limit=300)
+    assert len(all_logs) == 200
+    assert all_logs[0]["company_name"] == "Company 204"
+    assert all_logs[-1]["company_name"] == "Company 5"
+

@@ -9,12 +9,14 @@ document.addEventListener("DOMContentLoaded", () => {
     loadFilters();
     loadTelegram();
     loadScheduler();
+    loadLogs();
     setupEventHandlers();
 
-    // Auto-refresh stats and scheduler status every 15s
+    // Auto-refresh stats, scheduler status, and logs every 15s
     setInterval(() => {
         loadScheduler();
         loadOverview();
+        loadLogs();
     }, 15000);
 });
 
@@ -58,6 +60,7 @@ function switchTab(tabId) {
         "tab-filters": "Job Matching Filters",
         "tab-telegram": "Telegram Alerts",
         "tab-scheduler": "Scheduler & Operating Hours",
+        "tab-logs": "Activity Logs",
     };
     document.getElementById("page-title").textContent = titles[tabId] || "CareerPulse";
 }
@@ -827,4 +830,64 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// ACTIVITY LOGS TAB
+async function loadLogs() {
+    const tbody = document.getElementById("logs-table-body");
+    if (!tbody) return;
+
+    try {
+        const logs = await fetch("/api/logs?limit=100").then(r => r.json());
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No scan activity recorded yet. Run a scan to see logs.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = logs.map(l => {
+            let rowClass = "log-row-info";
+            let statusBadge = `<span class="badge badge-info">ℹ Info</span>`;
+            let titleAttr = "";
+
+            if (l.status === "failed") {
+                rowClass = "log-row-error";
+                statusBadge = `<span class="badge badge-danger">❌ Failed</span>`;
+                if (l.error_message) {
+                    titleAttr = ` title="${escapeHtml(l.error_message)}"`;
+                }
+            } else if (l.status === "warning") {
+                rowClass = "log-row-warning";
+                statusBadge = `<span class="badge badge-warning">⚠ Warning</span>`;
+                if (l.error_message) {
+                    titleAttr = ` title="${escapeHtml(l.error_message)}"`;
+                }
+            } else if (l.status === "success") {
+                if (l.jobs_matched > 0) {
+                    rowClass = "log-row-success";
+                } else {
+                    rowClass = "log-row-info";
+                }
+                statusBadge = `<span class="badge badge-success">✅ Success</span>`;
+            }
+
+            const dateStr = l.scanned_at ? new Date(l.scanned_at).toLocaleString() : "-";
+            const durationStr = `${Number(l.duration_seconds || 0).toFixed(1)}s`;
+
+            return `
+                <tr class="${rowClass}"${titleAttr}>
+                    <td>${escapeHtml(dateStr)}</td>
+                    <td><strong>${escapeHtml(l.company_name)}</strong></td>
+                    <td><span class="badge badge-info">${escapeHtml((l.provider || 'custom').toUpperCase())}</span></td>
+                    <td>${Number(l.jobs_found || 0)}</td>
+                    <td><strong>${Number(l.jobs_matched || 0)}</strong></td>
+                    <td>${Number(l.alerts_sent || 0)}</td>
+                    <td>${durationStr}</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        }).join("");
+    } catch (err) {
+        console.error("Error loading scan logs:", err);
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Error loading activity logs. Check console.</td></tr>`;
+    }
 }

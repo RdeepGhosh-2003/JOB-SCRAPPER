@@ -731,4 +731,11 @@ details.accordion .accordion-body {
     color: var(--primary);
 }
 
+/* Activity Log Rows */
+.log-row-success td { border-left: 3px solid var(--success); }
+.log-row-info    td { border-left: 3px solid var(--border-color); }
+.log-row-warning td { border-left: 3px solid var(--warning); background-color: var(--warning-bg); }
+.log-row-error   td { border-left: 3px solid var(--danger);  background-color: var(--danger-bg); }
+
+
 

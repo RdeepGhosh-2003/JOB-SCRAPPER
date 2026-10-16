@@ -75,3 +75,21 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT NOT NULL, -- JSON-serialized value
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Scan Activity History
+CREATE TABLE IF NOT EXISTS scan_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scanned_at TEXT NOT NULL DEFAULT (STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'NOW')),
+    company_id INTEGER,
+    company_name TEXT NOT NULL,
+    provider TEXT NOT NULL DEFAULT 'custom',
+    jobs_found INTEGER NOT NULL DEFAULT 0,
+    jobs_matched INTEGER NOT NULL DEFAULT 0,
+    alerts_sent INTEGER NOT NULL DEFAULT 0,
+    duration_seconds REAL NOT NULL DEFAULT 0.0,
+    status TEXT NOT NULL DEFAULT 'success',
+    error_message TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_scan_logs_id ON scan_logs(id DESC);
+

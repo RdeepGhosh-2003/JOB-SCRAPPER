@@ -336,3 +336,52 @@ class Database:
                 (key, val_str),
             )
             await conn.commit()
+
+    async def write_scan_log(
+        self,
+        company_name: str,
+        company_id: Optional[int] = None,
+        provider: str = "custom",
+        jobs_found: int = 0,
+        jobs_matched: int = 0,
+        alerts_sent: int = 0,
+        duration_seconds: float = 0.0,
+        status: str = "success",
+        error_message: Optional[str] = None,
+    ) -> int:
+        """Insert a scan log entry and prune history to retain newest 200 entries."""
+        async with await self.get_connection() as conn:
+            cursor = await conn.execute(
+                """
+                INSERT INTO scan_logs (
+                    company_id, company_name, provider,
+                    jobs_found, jobs_matched, alerts_sent,
+                    duration_seconds, status, error_message
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    company_id, company_name, provider,
+                    jobs_found, jobs_matched, alerts_sent,
+                    duration_seconds, status, error_message
+                ),
+            )
+            log_id = cursor.lastrowid or 0
+
+            # Immediately purge rows beyond the newest 200
+            await conn.execute(
+                "DELETE FROM scan_logs WHERE id NOT IN (SELECT id FROM scan_logs ORDER BY id DESC LIMIT 200)"
+            )
+            await conn.commit()
+            return int(log_id)
+
+    async def get_scan_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Retrieve recent scan logs up to limit."""
+        async with await self.get_connection() as conn:
+            async with conn.execute(
+                "SELECT * FROM scan_logs ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(r) for r in rows]
+

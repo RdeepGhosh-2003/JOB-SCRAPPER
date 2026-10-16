@@ -12,6 +12,7 @@ Coordinates:
 import asyncio
 from datetime import datetime, timezone
 import logging
+import time
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -122,6 +123,7 @@ class ScanPipeline:
             provider=provider,
         )
 
+        _t0 = time.monotonic()
         try:
             # If identifier is missing, attempt to extract via detector
             if not identifier and career_url:
@@ -150,7 +152,7 @@ class ScanPipeline:
                 )
             else:
                 jobs = await self._fallback_scraper.fetch_jobs(
-                    url=career_url,
+                    company_identifier=career_url,
                     company_name=comp_name,
                 )
 
@@ -225,6 +227,30 @@ class ScanPipeline:
                     (err_msg, comp_id),
                 )
                 await conn.commit()
+
+        finally:
+            duration = round(time.monotonic() - _t0, 2)
+            if result.status == "failed" or result.error:
+                log_status = "failed"
+            elif result.total_found > 0:
+                log_status = "success"
+            else:
+                log_status = "warning"
+
+            try:
+                await self.db.write_scan_log(
+                    company_id=comp_id,
+                    company_name=comp_name,
+                    provider=result.provider,
+                    jobs_found=result.total_found,
+                    jobs_matched=result.total_matched,
+                    alerts_sent=result.new_alerts,
+                    duration_seconds=duration,
+                    status=log_status,
+                    error_message=result.error,
+                )
+            except Exception as log_err:
+                logger.warning(f"Failed to write scan log for {comp_name}: {log_err}")
 
         return result
 

@@ -17,6 +17,7 @@ from career_pulse.web.routes.jobs import router as jobs_router
 from career_pulse.web.routes.scan import router as scan_router
 from career_pulse.web.routes.telegram import router as telegram_router
 from career_pulse.web.routes.scheduler import router as scheduler_router, get_global_scheduler
+from career_pulse.web.routes.logs import router as logs_router
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(scan_router)
     app.include_router(telegram_router)
     app.include_router(scheduler_router)
+    app.include_router(logs_router)
 
     # Dashboard Shell Route
     @app.get("/", response_class=HTMLResponse)

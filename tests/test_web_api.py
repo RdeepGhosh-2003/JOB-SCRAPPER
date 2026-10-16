@@ -115,3 +115,14 @@ async def test_scheduler_api(app):
         assert "is_running" in data
         assert "in_active_window" in data
         assert "config" in data
+
+
+@pytest.mark.asyncio
+async def test_logs_api(app):
+    """Verify scan activity logs API endpoint."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/api/logs?limit=50")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+
