@@ -743,18 +743,118 @@ details.accordion .accordion-body {
 .log-row-warning td { border-left: 3px solid var(--warning); background-color: var(--warning-bg); }
 .log-row-error   td { border-left: 3px solid var(--danger);  background-color: var(--danger-bg); }
 
+/* Layout Toggle Button Group */
+.pipeline-layout-toggle {
+    display: inline-flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 3px;
+    gap: 3px;
+}
+
+.pipeline-layout-toggle .btn-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius) - 3px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.pipeline-layout-toggle .btn-toggle:hover {
+    color: var(--text-main);
+    background: var(--bg-surface-hover);
+}
+
+.pipeline-layout-toggle .btn-toggle.active {
+    color: #fff;
+    background: var(--primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 /* Live Pipeline Flowchart Styles */
 .pipeline-flow {
     display: flex;
+    transition: all 0.25s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Vertical Layout */
+.pipeline-flow.vertical,
+.pipeline-flow:not(.horizontal) {
     flex-direction: column;
     align-items: center;
-    max-width: 520px;
+    max-width: 540px;
     margin: 1.5rem auto;
+}
+
+.pipeline-flow.vertical .pipeline-node,
+.pipeline-flow:not(.horizontal) .pipeline-node {
     width: 100%;
 }
 
+.pipeline-flow.vertical .pipeline-connector,
+.pipeline-flow:not(.horizontal) .pipeline-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin: 0.35rem 0;
+    line-height: 1;
+    font-weight: 700;
+    user-select: none;
+}
+
+/* Horizontal Layout */
+.pipeline-flow.horizontal {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 100%;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    padding: 0.5rem 0.5rem 1.25rem 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.pipeline-flow.horizontal .pipeline-node {
+    flex: 1 1 210px;
+    min-width: 200px;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.pipeline-flow.horizontal .pipeline-node-detail {
+    flex-grow: 1;
+}
+
+.pipeline-flow.horizontal .pipeline-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.55rem;
+    font-size: 1.45rem;
+    color: var(--primary);
+    line-height: 1;
+    font-weight: 700;
+    user-select: none;
+    flex-shrink: 0;
+}
+
 .pipeline-node {
-    width: 100%;
     background: var(--bg-surface);
     border: 2px solid var(--border-color);
     border-radius: var(--radius);
@@ -881,20 +981,6 @@ details.accordion .accordion-body {
         transform: scale(0.9);
         box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
     }
-}
-
-/* Vertical Connecting Arrows */
-.pipeline-connector {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: var(--primary);
-    margin: 0.35rem 0;
-    line-height: 1;
-    font-weight: 700;
-    user-select: none;
-    transition: color 0.2s;
 }
 
 /* Stage Error Pinpointing Box */

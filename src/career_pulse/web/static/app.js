@@ -973,12 +973,38 @@ async function loadLogs() {
 
 // LIVE PIPELINE FLOWCHART TAB
 let pipelinePollTimer = null;
+let currentPipelineLayout = localStorage.getItem("cp_pipeline_layout") || "vertical";
+
+function setPipelineLayout(layout) {
+    currentPipelineLayout = layout === "horizontal" ? "horizontal" : "vertical";
+    localStorage.setItem("cp_pipeline_layout", currentPipelineLayout);
+
+    const btnVert = document.getElementById("btn-layout-vertical");
+    const btnHoriz = document.getElementById("btn-layout-horizontal");
+    if (btnVert) btnVert.classList.toggle("active", currentPipelineLayout === "vertical");
+    if (btnHoriz) btnHoriz.classList.toggle("active", currentPipelineLayout === "horizontal");
+
+    const flowContainer = document.getElementById("pipeline-flow");
+    if (flowContainer) {
+        flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
+        const arrow = currentPipelineLayout === "horizontal" ? "→" : "↓";
+        flowContainer.querySelectorAll(".pipeline-connector").forEach(el => {
+            el.textContent = arrow;
+        });
+    }
+}
 
 async function loadPipeline() {
     const flowContainer = document.getElementById("pipeline-flow");
     const scanBadge = document.getElementById("pipeline-scan-badge");
     const refreshText = document.getElementById("pipeline-refresh-text");
     const refreshDot = document.getElementById("pipeline-refresh-dot");
+
+    // Sync layout toggle buttons with saved state
+    const btnVert = document.getElementById("btn-layout-vertical");
+    const btnHoriz = document.getElementById("btn-layout-horizontal");
+    if (btnVert) btnVert.classList.toggle("active", currentPipelineLayout === "vertical");
+    if (btnHoriz) btnHoriz.classList.toggle("active", currentPipelineLayout === "horizontal");
 
     try {
         const res = await fetch("/api/pipeline/state");
@@ -996,8 +1022,10 @@ async function loadPipeline() {
             }
         }
 
-        // 2. Render all 6 nodes with connecting arrows (↓)
+        // 2. Render all 6 nodes with connecting arrows (↓ in vertical, → in horizontal)
         if (flowContainer && data.nodes) {
+            flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
+            const arrow = currentPipelineLayout === "horizontal" ? "→" : "↓";
             const nodeOrder = ["scheduler", "companies", "adapter", "matcher", "database", "telegram"];
             const fragments = [];
 
@@ -1028,7 +1056,7 @@ async function loadPipeline() {
                 fragments.push(cardHtml);
 
                 if (idx < nodeOrder.length - 1) {
-                    fragments.push(`<div class="pipeline-connector">↓</div>`);
+                    fragments.push(`<div class="pipeline-connector">${arrow}</div>`);
                 }
             });
 
@@ -1048,6 +1076,9 @@ async function loadPipeline() {
         pipelinePollTimer = setTimeout(loadPipeline, nextInterval);
     } catch (err) {
         console.error("Error loading pipeline flowchart:", err);
+        if (flowContainer && (!flowContainer.children.length || flowContainer.querySelector(".text-muted"))) {
+            flowContainer.innerHTML = `<p class="text-danger text-center py-4">⚠️ Unable to load pipeline state. Retrying in 15s...</p>`;
+        }
         if (pipelinePollTimer) clearTimeout(pipelinePollTimer);
         pipelinePollTimer = setTimeout(loadPipeline, 15000);
     }
