@@ -41,4 +41,5 @@ Thumbs.db
 convo_artifacts/
 scratch/
 prompt_draft.md*
+*.log
 
