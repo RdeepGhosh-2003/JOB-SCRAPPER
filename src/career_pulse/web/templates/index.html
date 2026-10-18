@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerPulse — Local Career Portal Job Tracker</title>
-    <link rel="stylesheet" href="/static/app.css?v=14">
+    <link rel="stylesheet" href="/static/app.css?v=15">
 </head>
 <body>
     <div class="app-layout">
@@ -173,16 +173,6 @@
                             <span id="pipeline-scan-badge" class="badge badge-info">IDLE</span>
                         </div>
                         <div class="pipeline-header-actions" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                            <div class="pipeline-layout-toggle" id="pipeline-layout-toggle" role="group" aria-label="Pipeline orientation">
-                                <button type="button" class="btn-toggle active" id="btn-layout-vertical" title="Switch to Vertical View" onclick="setPipelineLayout('vertical')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M18 9l-6-6-6 6M18 15l-6 6-6-6"/></svg>
-                                    Vertical
-                                </button>
-                                <button type="button" class="btn-toggle" id="btn-layout-horizontal" title="Switch to Horizontal View" onclick="setPipelineLayout('horizontal')">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M9 18l-6-6 6-6M15 18l6-6-6-6"/></svg>
-                                    Horizontal
-                                </button>
-                            </div>
                             <span class="refresh-indicator" id="pipeline-refresh-indicator" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted);">
                                 <span class="status-dot green" id="pipeline-refresh-dot"></span>
                                 <span id="pipeline-refresh-text">Auto-refresh: 15s</span>
@@ -532,6 +522,6 @@
         </main>
     </div>
 
-    <script src="/static/app.js?v=14"></script>
+    <script src="/static/app.js?v=15"></script>
 </body>
 </html>

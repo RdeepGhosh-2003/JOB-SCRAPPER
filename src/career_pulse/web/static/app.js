@@ -998,26 +998,6 @@ async function loadLogs() {
 
 // LIVE PIPELINE FLOWCHART TAB
 let pipelinePollTimer = null;
-let currentPipelineLayout = localStorage.getItem("cp_pipeline_layout") || "vertical";
-
-function setPipelineLayout(layout) {
-    currentPipelineLayout = layout === "horizontal" ? "horizontal" : "vertical";
-    localStorage.setItem("cp_pipeline_layout", currentPipelineLayout);
-
-    const btnVert = document.getElementById("btn-layout-vertical");
-    const btnHoriz = document.getElementById("btn-layout-horizontal");
-    if (btnVert) btnVert.classList.toggle("active", currentPipelineLayout === "vertical");
-    if (btnHoriz) btnHoriz.classList.toggle("active", currentPipelineLayout === "horizontal");
-
-    const flowContainer = document.getElementById("pipeline-flow");
-    if (flowContainer) {
-        flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
-        const arrow = currentPipelineLayout === "horizontal" ? "→" : "↓";
-        flowContainer.querySelectorAll(".pipeline-connector").forEach(el => {
-            el.textContent = arrow;
-        });
-    }
-}
 
 function toggleFailingPortals(btn) {
     const drawer = btn.nextElementSibling;
@@ -1208,16 +1188,8 @@ function renderStage2Matrix(adapterNode, isScanning) {
     `;
 }
 
-function renderSvgLane1(isScanning, breakdown, layout) {
-    if (layout === "vertical") {
-        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
-        return `
-            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
-                <path class="${pathClass}" d="M 100 0 L 100 36" />
-            </svg>
-        `;
-    }
 
+function renderSvgLane1(isScanning, breakdown) {
     const targets = [45, 85, 125, 165, 205];
     const adapters = ["greenhouse", "lever", "ashby", "workday", "fallback"];
     const paths = targets.map((ty, idx) => {
@@ -1234,16 +1206,7 @@ function renderSvgLane1(isScanning, breakdown, layout) {
     `;
 }
 
-function renderSvgLane2(isScanning, breakdown, layout) {
-    if (layout === "vertical") {
-        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
-        return `
-            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
-                <path class="${pathClass}" d="M 100 0 L 100 36" />
-            </svg>
-        `;
-    }
-
+function renderSvgLane2(isScanning, breakdown) {
     const sources = [45, 85, 125, 165, 205];
     const adapters = ["greenhouse", "lever", "ashby", "workday", "fallback"];
     const paths = sources.map((sy, idx) => {
@@ -1260,16 +1223,7 @@ function renderSvgLane2(isScanning, breakdown, layout) {
     `;
 }
 
-function renderSvgLane3(isScanning, dbNode, tgNode, layout) {
-    if (layout === "vertical") {
-        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
-        return `
-            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
-                <path class="${pathClass}" d="M 100 0 L 100 36" />
-            </svg>
-        `;
-    }
-
+function renderSvgLane3(isScanning, dbNode, tgNode) {
     const dbState = dbNode ? dbNode.state : "idle";
     const tgState = tgNode ? tgNode.state : "idle";
     const dbClass = isScanning ? "flow-pulse path-running" : (dbState === "error" ? "path-error" : "path-success");
@@ -1323,12 +1277,6 @@ async function loadPipeline() {
     const refreshText = document.getElementById("pipeline-refresh-text");
     const refreshDot = document.getElementById("pipeline-refresh-dot");
 
-    // Sync layout toggle buttons with saved state
-    const btnVert = document.getElementById("btn-layout-vertical");
-    const btnHoriz = document.getElementById("btn-layout-horizontal");
-    if (btnVert) btnVert.classList.toggle("active", currentPipelineLayout === "vertical");
-    if (btnHoriz) btnHoriz.classList.toggle("active", currentPipelineLayout === "horizontal");
-
     try {
         const res = await fetch("/api/pipeline/state");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1350,7 +1298,7 @@ async function loadPipeline() {
 
         // 3. Render Hybrid 4-Stage DAG Flowchart with SVG Bezier Connectors
         if (flowContainer && data.nodes) {
-            flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
+            flowContainer.className = "pipeline-flow";
             const adaptersBreakdown = (data.nodes.adapter && data.nodes.adapter.meta) ? data.nodes.adapter.meta.adapters_breakdown : null;
 
             const compState = (data.nodes.companies && data.nodes.companies.state) || "idle";
@@ -1371,7 +1319,7 @@ async function loadPipeline() {
 
                 <!-- SVG Connector 1: Bezier Fan-Out -->
                 <div class="dag-bezier-lane lane-1">
-                    ${renderSvgLane1(data.is_scanning, adaptersBreakdown, currentPipelineLayout)}
+                    ${renderSvgLane1(data.is_scanning, adaptersBreakdown)}
                 </div>
 
                 <!-- Stage 2: Parallel ATS Extraction Matrix -->
@@ -1385,7 +1333,7 @@ async function loadPipeline() {
 
                 <!-- SVG Connector 2: Bezier Fan-In -->
                 <div class="dag-bezier-lane lane-2">
-                    ${renderSvgLane2(data.is_scanning, adaptersBreakdown, currentPipelineLayout)}
+                    ${renderSvgLane2(data.is_scanning, adaptersBreakdown)}
                 </div>
 
                 <!-- Stage 3: Evaluation Engine -->
@@ -1399,7 +1347,7 @@ async function loadPipeline() {
 
                 <!-- SVG Connector 3: Bezier Fork -->
                 <div class="dag-bezier-lane lane-3">
-                    ${renderSvgLane3(data.is_scanning, data.nodes.database, data.nodes.telegram, currentPipelineLayout)}
+                    ${renderSvgLane3(data.is_scanning, data.nodes.database, data.nodes.telegram)}
                 </div>
 
                 <!-- Stage 4: Dual Outputs -->
