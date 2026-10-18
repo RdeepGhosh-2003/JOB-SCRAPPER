@@ -88,6 +88,12 @@ def wnd_proc(hwnd, msg, wparam, lparam):
 
 
 def main():
+    # Ensure single instance via Win32 Named Mutex
+    ERROR_ALREADY_EXISTS = 183
+    mutex = kernel32.CreateMutexW(None, False, "CareerPulseLidMonitorMutex")
+    if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        return
+
     # Wait up to 30s until local CareerPulse server is responding
     wait_for_server()
 

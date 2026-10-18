@@ -2,12 +2,18 @@
 CareerPulse Local FastAPI Application.
 """
 
+import asyncio
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 
 from career_pulse.config import settings
 from career_pulse.db.session import Database

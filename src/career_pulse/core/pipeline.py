@@ -281,14 +281,32 @@ class ScanPipeline:
             companies_scanned=len(companies),
         )
 
-        for comp in companies:
-            res = await self.scan_company(comp, matcher)
-            report.company_results.append(res)
-            report.total_jobs_found += res.total_found
-            report.total_jobs_matched += res.total_matched
-            report.new_alerts_sent += res.new_alerts
-            if res.error:
-                report.errors.append(f"{res.company_name}: {res.error}")
+        sem = asyncio.Semaphore(5)
+
+        async def _scan_worker(comp: Dict[str, Any]) -> ScanCompanyResult:
+            async with sem:
+                try:
+                    return await self.scan_company(comp, matcher)
+                except Exception as exc:
+                    logger.error(f"Unhandled exception scanning {comp.get('name')}: {exc}")
+                    return ScanCompanyResult(
+                        company_id=int(comp.get("id", 0)),
+                        company_name=str(comp.get("name", "Unknown")),
+                        provider=str(comp.get("ats_provider") or comp.get("provider") or "custom"),
+                        status="failed",
+                        error=str(exc),
+                    )
+
+        results = await asyncio.gather(*[_scan_worker(comp) for comp in companies], return_exceptions=False)
+
+        for res in results:
+            if isinstance(res, ScanCompanyResult):
+                report.company_results.append(res)
+                report.total_jobs_found += res.total_found
+                report.total_jobs_matched += res.total_matched
+                report.new_alerts_sent += res.new_alerts
+                if res.error:
+                    report.errors.append(f"{res.company_name}: {res.error}")
 
         finish_time = datetime.now(timezone.utc)
         report.finished_at = finish_time

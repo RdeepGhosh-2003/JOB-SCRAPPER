@@ -685,6 +685,31 @@ function setupEventHandlers() {
         }
     });
 
+    // Inline pipeline scan trigger
+    const btnPipelineScan = document.getElementById("btn-pipeline-run-scan");
+    if (btnPipelineScan) {
+        btnPipelineScan.addEventListener("click", async () => {
+            btnPipelineScan.disabled = true;
+            btnPipelineScan.querySelector("span").textContent = "Running Pipeline...";
+            showToast("Executing live parallel pipeline scan across all portals...", "info");
+            try {
+                loadPipeline();
+                const report = await fetch("/api/scan/trigger", { method: "POST" }).then(r => r.json());
+                showToast(`Pipeline scan complete: ${report.companies_scanned} portals checked, ${report.total_jobs_found} jobs found, ${report.new_alerts_sent} alerts sent!`, "success");
+                loadOverview();
+                loadJobs();
+                loadCompanies();
+                loadPipeline();
+            } catch (e) {
+                showToast(`Pipeline scan failed: ${e.message}`, "error");
+                loadPipeline();
+            } finally {
+                btnPipelineScan.disabled = false;
+                btnPipelineScan.querySelector("span").textContent = "Run Pipeline Now";
+            }
+        });
+    }
+
     // Curated Registry Search & Confirm
     const compSearchInput = document.getElementById("company-name-search");
     const regSuggestions = document.getElementById("registry-suggestions");
@@ -994,6 +1019,187 @@ function setPipelineLayout(layout) {
     }
 }
 
+function toggleFailingPortals(btn) {
+    const drawer = btn.nextElementSibling;
+    if (!drawer) return;
+    const isHidden = drawer.classList.contains("hidden");
+    if (isHidden) {
+        drawer.classList.remove("hidden");
+        btn.textContent = btn.textContent.replace("▾", "▴");
+    } else {
+        drawer.classList.add("hidden");
+        btn.textContent = btn.textContent.replace("▴", "▾");
+    }
+}
+
+function renderMetaChips(key, meta) {
+    if (!meta) return "";
+    const chips = [];
+    if (key === "scheduler") {
+        if (meta.interval_minutes) chips.push(`<span class="meta-chip">Interval: <strong>${meta.interval_minutes}m</strong></span>`);
+        chips.push(`<span class="meta-chip">Window: <strong>${meta.in_active_window ? "Active" : "Outside"}</strong></span>`);
+        if (meta.total_runs !== undefined) chips.push(`<span class="meta-chip">Runs: <strong>${meta.total_runs}</strong></span>`);
+        if (meta.next_run_at) {
+            const nextTime = new Date(meta.next_run_at).toLocaleTimeString();
+            chips.push(`<span class="meta-chip">Next: <strong>${nextTime}</strong></span>`);
+        }
+    } else if (key === "companies") {
+        if (meta.total !== undefined) chips.push(`<span class="meta-chip">Total: <strong>${meta.total}</strong></span>`);
+        if (meta.active !== undefined) chips.push(`<span class="meta-chip">Active: <strong>${meta.active}</strong></span>`);
+        if (meta.failed !== undefined) chips.push(`<span class="meta-chip" style="${meta.failed > 0 ? 'color: var(--danger);' : ''}">Failing: <strong>${meta.failed}</strong></span>`);
+    } else if (key === "adapter") {
+        chips.push(`<span class="meta-chip">Protocols: <strong>5 Active</strong></span>`);
+        if (meta.total_found !== undefined) chips.push(`<span class="meta-chip">Yield: <strong>${meta.total_found} Jobs</strong></span>`);
+    } else if (key === "matcher") {
+        if (meta.match_rate !== undefined) chips.push(`<span class="meta-chip">Match Rate: <strong>${meta.match_rate}%</strong></span>`);
+        if (meta.matched_today !== undefined) chips.push(`<span class="meta-chip">Matched: <strong>${meta.matched_today}</strong></span>`);
+        if (meta.jobs_rejected !== undefined) chips.push(`<span class="meta-chip">Filtered: <strong>${meta.jobs_rejected}</strong></span>`);
+    } else if (key === "database") {
+        chips.push(`<span class="meta-chip">Mode: <strong>WAL Active</strong></span>`);
+        if (meta.total_jobs !== undefined) chips.push(`<span class="meta-chip">Indexed: <strong>${meta.total_jobs} Jobs</strong></span>`);
+        chips.push(`<span class="meta-chip">Dedup: <strong>Active</strong></span>`);
+    } else if (key === "telegram") {
+        chips.push(`<span class="meta-chip">Mode: <strong>${meta.mock_mode ? 'Mock Sink' : 'Live Bot'}</strong></span>`);
+        chips.push(`<span class="meta-chip">Token: <strong>${meta.has_token ? 'Configured' : 'Missing'}</strong></span>`);
+        if (meta.total_alerts !== undefined) chips.push(`<span class="meta-chip">Sent: <strong>${meta.total_alerts}</strong></span>`);
+    }
+    return chips.length ? `<div class="pipeline-meta-chips">${chips.join("")}</div>` : "";
+}
+
+function renderActionBtn(key) {
+    const actions = {
+        scheduler: { label: "Adjust Hours & Schedule →", tab: "tab-scheduler" },
+        companies: { label: "Manage Company Portals →", tab: "tab-companies" },
+        adapter: { label: "Inspect Activity Logs →", tab: "tab-logs" },
+        matcher: { label: "Tune Filter Keywords →", tab: "tab-filters" },
+        database: { label: "Browse Indexed Jobs →", tab: "tab-jobs" },
+        telegram: { label: "Configure Telegram Alerts →", tab: "tab-telegram" },
+    };
+    const act = actions[key];
+    if (!act) return "";
+    return `<button type="button" class="node-action-btn" onclick="switchTab('${act.tab}')">${act.label}</button>`;
+}
+
+function renderNodeCard(key, node, isScanning) {
+    if (!node) return "";
+    const state = isScanning ? "running" : (node.state || "idle").toLowerCase();
+    const nodeClass = `pipeline-node node-${state}`;
+    const errorHtml = node.error
+        ? `<div class="node-error-msg">⚠️ <strong>Failure:</strong> ${escapeHtml(node.error)}</div>`
+        : "";
+
+    // Multi-error expandable drawer for company portals
+    let failedDrawerHtml = "";
+    if (key === "companies" && node.meta && node.meta.failed_companies && node.meta.failed_companies.length > 0) {
+        const fcList = node.meta.failed_companies;
+        const items = fcList.map(fc => `
+            <div class="failing-portal-item">
+                <span class="failing-portal-name">${escapeHtml(fc.name)}</span>
+                <span class="failing-portal-ats">${escapeHtml(fc.ats || 'custom')}</span>
+                <span class="failing-portal-err">${escapeHtml(fc.error)}</span>
+            </div>
+        `).join("");
+
+        failedDrawerHtml = `
+            <div>
+                <button type="button" class="failing-portals-toggle" onclick="toggleFailingPortals(this)">
+                    ⚠️ View all ${fcList.length} failing portals ▾
+                </button>
+                <div class="failing-portals-drawer hidden">
+                    ${items}
+                </div>
+            </div>
+        `;
+    }
+
+    const metaChipsHtml = renderMetaChips(key, node.meta);
+    const actionBtnHtml = renderActionBtn(key);
+
+    return `
+        <div class="${nodeClass}">
+            <div class="pipeline-node-header">
+                <div class="pipeline-node-title-group">
+                    <span class="pipeline-node-dot"></span>
+                    <strong class="pipeline-node-title">${escapeHtml(node.label || key)}</strong>
+                </div>
+                <span class="pipeline-state-badge state-${state}">${escapeHtml(state.toUpperCase())}</span>
+            </div>
+            <div class="pipeline-node-detail">${escapeHtml(node.detail || "")}</div>
+            ${errorHtml}
+            ${failedDrawerHtml}
+            ${metaChipsHtml}
+            ${actionBtnHtml}
+        </div>
+    `;
+}
+
+function renderAdapterFanOut(breakdown, isScanning) {
+    if (!breakdown) return "";
+    const adapters = [
+        { id: "greenhouse", name: "Greenhouse API" },
+        { id: "lever", name: "Lever API" },
+        { id: "ashby", name: "Ashby API" },
+        { id: "workday", name: "Workday API" },
+        { id: "fallback", name: "Fallback Scraper" },
+    ];
+
+    const cards = adapters.map(ad => {
+        const item = breakdown[ad.id] || { state: "idle", portals: 0, jobs_found: 0, failures: [] };
+        const state = isScanning ? "running" : (item.state || "idle");
+        const dotColor = state === "success" ? "var(--success)" : state === "error" ? "var(--danger)" : state === "warning" ? "var(--warning)" : state === "running" ? "var(--primary)" : "var(--text-muted)";
+        const pulseClass = state === "running" ? "pulse" : "";
+
+        return `
+            <div class="adapter-subcard sub-${state}">
+                <div class="adapter-subcard-header">
+                    <span>${escapeHtml(ad.name)}</span>
+                    <span class="adapter-subcard-dot ${pulseClass}" style="background-color: ${dotColor};"></span>
+                </div>
+                <div class="adapter-subcard-stats">
+                    <span>${item.portals || 0} Portals</span>
+                    <strong>${item.jobs_found || 0} jobs</strong>
+                </div>
+            </div>
+        `;
+    });
+
+    return `<div class="adapter-fanout-grid">${cards.join("")}</div>`;
+}
+
+function renderSummaryBar(lastCycle) {
+    const summaryContainer = document.getElementById("pipeline-cycle-summary");
+    if (!summaryContainer) return;
+
+    if (!lastCycle) {
+        summaryContainer.innerHTML = `
+            <div class="pipeline-summary-group">
+                <span class="summary-pill">⚡ <span>Scan Engine:</span> <strong>5 Parallel Workers</strong></span>
+                <span class="summary-pill">🕒 <span>Status:</span> <strong>Standing by for first cycle</strong></span>
+            </div>
+            <span class="badge badge-info">IDLE</span>
+        `;
+        return;
+    }
+
+    const durationStr = `${Number(lastCycle.duration_seconds || 0).toFixed(1)}s`;
+    const healthyBadge = (lastCycle.errors_count || 0) > 0
+        ? `<span class="badge badge-warning">⚠️ ${lastCycle.errors_count} Warnings</span>`
+        : `<span class="badge badge-success">✅ Cycle Healthy</span>`;
+
+    summaryContainer.innerHTML = `
+        <div class="pipeline-summary-group">
+            <span class="summary-pill">⏱ <span>Runtime:</span> <strong>${durationStr}</strong></span>
+            <span class="summary-pill">🏢 <span>Portals:</span> <strong>${lastCycle.companies_scanned}</strong></span>
+            <span class="summary-pill">🔍 <span>Found:</span> <strong>${lastCycle.total_jobs_found}</strong></span>
+            <span class="summary-pill">🎯 <span>Matched:</span> <strong>${lastCycle.total_jobs_matched}</strong></span>
+            <span class="summary-pill">✈️ <span>Alerts:</span> <strong>${lastCycle.new_alerts_sent}</strong></span>
+        </div>
+        <div>
+            ${healthyBadge}
+        </div>
+    `;
+}
+
 async function loadPipeline() {
     const flowContainer = document.getElementById("pipeline-flow");
     const scanBadge = document.getElementById("pipeline-scan-badge");
@@ -1022,48 +1228,68 @@ async function loadPipeline() {
             }
         }
 
-        // 2. Render all 6 nodes with connecting arrows (↓ in vertical, → in horizontal)
+        // 2. Render Telemetry Summary Bar
+        renderSummaryBar(data.last_cycle);
+
+        // 3. Render DAG Flowchart with Parallel Branches
         if (flowContainer && data.nodes) {
             flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
             const arrow = currentPipelineLayout === "horizontal" ? "→" : "↓";
-            const nodeOrder = ["scheduler", "companies", "adapter", "matcher", "database", "telegram"];
             const fragments = [];
 
-            nodeOrder.forEach((key, idx) => {
-                const node = data.nodes[key];
-                if (!node) return;
+            // Stage 1: Scheduler
+            fragments.push(renderNodeCard("scheduler", data.nodes.scheduler, data.is_scanning));
+            fragments.push(`<div class="pipeline-connector">${arrow}</div>`);
 
-                const state = (node.state || "idle").toLowerCase();
-                const nodeClass = `pipeline-node node-${state}`;
-                const errorHtml = node.error
-                    ? `<div class="node-error-msg">⚠️ <strong>Failure:</strong> ${escapeHtml(node.error)}</div>`
-                    : "";
+            // Stage 2: Company Portals
+            fragments.push(renderNodeCard("companies", data.nodes.companies, data.is_scanning));
 
-                const cardHtml = `
-                    <div class="${nodeClass}">
-                        <div class="pipeline-node-header">
-                            <div class="pipeline-node-title-group">
-                                <span class="pipeline-node-dot"></span>
-                                <strong class="pipeline-node-title">${escapeHtml(node.label || key)}</strong>
-                            </div>
-                            <span class="pipeline-state-badge state-${state}">${escapeHtml(state.toUpperCase())}</span>
-                        </div>
-                        <div class="pipeline-node-detail">${escapeHtml(node.detail || "")}</div>
-                        ${errorHtml}
-                    </div>
-                `;
+            // Fan-out connector to parallel ATS adapters
+            fragments.push(`
+                <div class="pipeline-branch-header">⚡ Parallel ATS Extraction (Fan-Out)</div>
+                <div class="pipeline-connector">${arrow}</div>
+            `);
 
-                fragments.push(cardHtml);
+            // Stage 3: ATS Adapters & Parallel Fan-out Grid
+            const adapterCard = renderNodeCard("adapter", data.nodes.adapter, data.is_scanning);
+            const adaptersBreakdown = (data.nodes.adapter && data.nodes.adapter.meta) ? data.nodes.adapter.meta.adapters_breakdown : null;
+            const fanOutHtml = renderAdapterFanOut(adaptersBreakdown, data.is_scanning);
+            fragments.push(`
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 0.65rem;">
+                    ${adapterCard}
+                    ${fanOutHtml}
+                </div>
+            `);
 
-                if (idx < nodeOrder.length - 1) {
-                    fragments.push(`<div class="pipeline-connector">${arrow}</div>`);
-                }
-            });
+            // Fan-in connector to Job Matcher
+            fragments.push(`
+                <div class="pipeline-branch-header">⚡ Unified Matching (Fan-In)</div>
+                <div class="pipeline-connector">${arrow}</div>
+            `);
+
+            // Stage 4: Job Matcher
+            fragments.push(renderNodeCard("matcher", data.nodes.matcher, data.is_scanning));
+
+            // Dual output fork connector
+            fragments.push(`
+                <div class="pipeline-branch-header">⚡ Parallel Dual Output (Persistence & Alerting)</div>
+                <div class="pipeline-connector">${arrow}</div>
+            `);
+
+            // Stage 5: Parallel Dual Output Fork (SQLite Database & Telegram Alerts)
+            const dbCard = renderNodeCard("database", data.nodes.database, data.is_scanning);
+            const tgCard = renderNodeCard("telegram", data.nodes.telegram, data.is_scanning);
+            fragments.push(`
+                <div class="pipeline-dag-fork">
+                    ${dbCard}
+                    ${tgCard}
+                </div>
+            `);
 
             flowContainer.innerHTML = fragments.join("");
         }
 
-        // 3. Dynamic polling: 3s if is_scanning: true, falling back to 15s when idle
+        // 4. Dynamic polling: 3s if is_scanning: true, falling back to 15s when idle
         const nextInterval = data.is_scanning ? 3000 : 15000;
         if (refreshText) {
             refreshText.textContent = data.is_scanning ? "Live Scan Polling: 3s" : "Auto-refresh: 15s";

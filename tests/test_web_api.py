@@ -193,6 +193,12 @@ async def test_pipeline_state_api(app):
         assert "is_scanning" in data
         assert isinstance(data["is_scanning"], bool)
         assert "nodes" in data
+        assert "last_cycle" in data
+        if data["last_cycle"] is not None:
+            assert isinstance(data["last_cycle"], dict)
+            assert "duration_seconds" in data["last_cycle"]
+            assert "companies_scanned" in data["last_cycle"]
+            assert "total_jobs_matched" in data["last_cycle"]
 
         expected_nodes = ["scheduler", "companies", "adapter", "matcher", "database", "telegram"]
         for node_key in expected_nodes:
@@ -204,6 +210,14 @@ async def test_pipeline_state_api(app):
             assert "detail" in node and isinstance(node["detail"], str)
             assert "meta" in node and isinstance(node["meta"], dict)
             assert "error" in node
+
+        # Check adapter breakdown and company failed_companies list
+        assert "adapters_breakdown" in data["nodes"]["adapter"]["meta"]
+        assert isinstance(data["nodes"]["adapter"]["meta"]["adapters_breakdown"], dict)
+        for expected_ats in ["greenhouse", "lever", "ashby", "workday", "fallback"]:
+            assert expected_ats in data["nodes"]["adapter"]["meta"]["adapters_breakdown"]
+        assert "failed_companies" in data["nodes"]["companies"]["meta"]
+        assert isinstance(data["nodes"]["companies"]["meta"]["failed_companies"], list)
 
 
 @pytest.mark.asyncio
@@ -260,6 +274,8 @@ async def test_pipeline_state_error_pinpointing(app):
             assert comp_node["state"] in ("error", "warning")
             assert comp_node["error"] is not None
             assert "503" in comp_node["error"]
+            failed_comps = comp_node["meta"].get("failed_companies", [])
+            assert any(fc["name"] == "Failing Pipeline Test Inc" and "503" in fc["error"] for fc in failed_comps)
     finally:
         async with await db.get_connection() as conn:
             await conn.execute("DELETE FROM companies WHERE id = ?", (comp_id,))
@@ -268,7 +284,7 @@ async def test_pipeline_state_error_pinpointing(app):
 
 @pytest.mark.asyncio
 async def test_pipeline_dashboard_html_elements(app):
-    """Verify dashboard HTML contains the pipeline tab button, tab panel, badge, and flow container."""
+    """Verify dashboard HTML contains the pipeline tab button, tab panel, badge, run button, summary, and flow container."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/")
         assert resp.status_code == 200
@@ -277,6 +293,8 @@ async def test_pipeline_dashboard_html_elements(app):
         assert 'id="tab-pipeline"' in html
         assert 'id="pipeline-flow"' in html
         assert 'id="pipeline-scan-badge"' in html
+        assert 'id="btn-pipeline-run-scan"' in html
+        assert 'id="pipeline-cycle-summary"' in html
         assert "Live Pipeline Monitor" in html
 
 

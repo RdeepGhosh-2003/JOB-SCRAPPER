@@ -134,7 +134,9 @@ class ResilientScheduler:
     async def _loop(self) -> None:
         """Resilient background polling loop using wall-clock RTC comparison."""
         logger.info("CareerPulse Resilient Scheduler started.")
-        self._next_run_at = datetime.now(timezone.utc)
+        # Startup grace period (15s) allows OS network/Wi-Fi to finish initializing on boot
+        self._next_run_at = datetime.now(timezone.utc) + timedelta(seconds=15)
+
 
         while self._running:
             try:

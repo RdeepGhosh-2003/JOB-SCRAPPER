@@ -32,9 +32,21 @@ class PipelineNode(BaseModel):
     error: Optional[str] = Field(default=None, description="Exact failure reason if stage is failing")
 
 
+class PipelineLastCycle(BaseModel):
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    duration_seconds: Optional[float] = None
+    companies_scanned: int = 0
+    total_jobs_found: int = 0
+    total_jobs_matched: int = 0
+    new_alerts_sent: int = 0
+    errors_count: int = 0
+
+
 class PipelineStateResponse(BaseModel):
     is_scanning: bool = Field(..., description="Whether a scan cycle is actively executing")
     nodes: Dict[str, PipelineNode] = Field(..., description="Map of pipeline stage nodes")
+    last_cycle: Optional[PipelineLastCycle] = None
 
 
 @router.get("/state", response_model=PipelineStateResponse)
@@ -47,6 +59,37 @@ async def get_pipeline_state() -> PipelineStateResponse:
 
     is_scanning = bool(scan._is_scanning or sched_status.is_scanning)
     last_report = scan._last_report or getattr(scheduler, "_last_report", None)
+
+    recent_logs: List[Dict[str, Any]] = []
+    try:
+        recent_logs = await db.get_scan_logs(limit=25)
+    except Exception:
+        pass
+
+    # Build last cycle telemetry
+    last_cycle: Optional[PipelineLastCycle] = None
+    if last_report:
+        last_cycle = PipelineLastCycle(
+            started_at=last_report.started_at.isoformat() if hasattr(last_report, "started_at") and last_report.started_at else None,
+            finished_at=last_report.finished_at.isoformat() if hasattr(last_report, "finished_at") and last_report.finished_at else None,
+            duration_seconds=getattr(last_report, "duration_seconds", 0.0),
+            companies_scanned=getattr(last_report, "companies_scanned", 0),
+            total_jobs_found=getattr(last_report, "total_jobs_found", 0),
+            total_jobs_matched=getattr(last_report, "total_jobs_matched", 0),
+            new_alerts_sent=getattr(last_report, "new_alerts_sent", 0),
+            errors_count=len(getattr(last_report, "errors", [])),
+        )
+    elif recent_logs:
+        last_cycle = PipelineLastCycle(
+            started_at=recent_logs[0].get("scanned_at"),
+            finished_at=recent_logs[0].get("scanned_at"),
+            duration_seconds=recent_logs[0].get("duration_seconds", 0.0),
+            companies_scanned=len(recent_logs),
+            total_jobs_found=sum(l.get("jobs_found", 0) for l in recent_logs),
+            total_jobs_matched=sum(l.get("jobs_matched", 0) for l in recent_logs),
+            new_alerts_sent=sum(l.get("alerts_sent", 0) for l in recent_logs),
+            errors_count=sum(1 for l in recent_logs if l.get("status") == "failed"),
+        )
 
     # 1. Scheduler Node
     sched_error: Optional[str] = None
@@ -85,12 +128,14 @@ async def get_pipeline_state() -> PipelineStateResponse:
         error=sched_error,
     )
 
-    # 2. Companies Node
+    # 2. Companies Node & Failed Company Breakdown
     total_comp = 0
     active_comp = 0
     failed_comp = 0
     failing_comp_name: Optional[str] = None
     failing_comp_err: Optional[str] = None
+    failed_companies_list: List[Dict[str, Any]] = []
+    comp_provider_counts: Dict[str, int] = {}
 
     try:
         async with await db.get_connection() as conn:
@@ -109,14 +154,41 @@ async def get_pipeline_state() -> PipelineStateResponse:
                     active_comp = int(row["active"] or 0)
                     failed_comp = int(row["failed"] or 0)
 
+            # Retrieve active provider counts
+            async with conn.execute(
+                """
+                SELECT LOWER(COALESCE(ats_provider, provider, 'custom')) as ats, COUNT(*) as cnt
+                FROM companies
+                WHERE is_active = 1
+                GROUP BY ats
+                """
+            ) as cur:
+                p_rows = await cur.fetchall()
+                for pr in p_rows:
+                    comp_provider_counts[pr["ats"]] = int(pr["cnt"])
+
+            # Retrieve ALL failing companies with full error details
             if failed_comp > 0:
                 async with conn.execute(
-                    "SELECT name, last_error FROM companies WHERE scan_status = 'failed' OR last_error IS NOT NULL ORDER BY id DESC LIMIT 1"
+                    """
+                    SELECT id, name, last_error, ats_provider, url
+                    FROM companies
+                    WHERE scan_status = 'failed' OR last_error IS NOT NULL
+                    ORDER BY id DESC
+                    """
                 ) as cur:
-                    fail_row = await cur.fetchone()
-                    if fail_row:
-                        failing_comp_name = fail_row["name"]
-                        failing_comp_err = fail_row["last_error"]
+                    fail_rows = await cur.fetchall()
+                    for fr in fail_rows:
+                        failed_companies_list.append({
+                            "id": fr["id"],
+                            "name": fr["name"],
+                            "error": fr["last_error"] or "Unknown error",
+                            "ats": (fr["ats_provider"] or "custom").lower(),
+                            "url": fr["url"] or "",
+                        })
+                    if failed_companies_list:
+                        failing_comp_name = failed_companies_list[0]["name"]
+                        failing_comp_err = failed_companies_list[0]["error"]
     except Exception as e:
         failed_comp = 1
         failing_comp_err = str(e)
@@ -145,16 +217,67 @@ async def get_pipeline_state() -> PipelineStateResponse:
         state=comp_state,
         label="Company Portals",
         detail=comp_detail,
-        meta={"total": total_comp, "active": active_comp, "failed": failed_comp},
+        meta={
+            "total": total_comp,
+            "active": active_comp,
+            "failed": failed_comp,
+            "failed_companies": failed_companies_list,
+        },
         error=comp_error,
     )
 
-    # 3. Adapter Node
-    recent_logs: List[Dict[str, Any]] = []
-    try:
-        recent_logs = await db.get_scan_logs(limit=10)
-    except Exception:
-        pass
+    # 3. Adapter Node with Parallel ATS Adapters Breakdown
+    adapter_defs = [
+        {"id": "greenhouse", "label": "Greenhouse API"},
+        {"id": "lever", "label": "Lever API"},
+        {"id": "ashby", "label": "Ashby API"},
+        {"id": "workday", "label": "Workday API"},
+        {"id": "fallback", "label": "Fallback Scraper"},
+    ]
+
+    adapters_breakdown: Dict[str, Dict[str, Any]] = {}
+    for ad in adapter_defs:
+        aid = ad["id"]
+        # Map provider counts
+        p_count = comp_provider_counts.get(aid, 0)
+        if aid == "fallback":
+            p_count += comp_provider_counts.get("custom", 0)
+
+        # Collect jobs found and failures from last_report or recent_logs
+        ad_jobs = 0
+        ad_failures = []
+        if last_report and hasattr(last_report, "company_results"):
+            for cr in last_report.company_results:
+                cr_prov = (cr.provider or "custom").lower()
+                if cr_prov == aid or (aid == "fallback" and cr_prov == "custom"):
+                    ad_jobs += cr.total_found
+                    if cr.error:
+                        ad_failures.append(f"{cr.company_name}: {cr.error}")
+        elif recent_logs:
+            for rl in recent_logs:
+                rl_prov = (rl.get("provider") or "custom").lower()
+                if rl_prov == aid or (aid == "fallback" and rl_prov == "custom"):
+                    ad_jobs += rl.get("jobs_found", 0)
+                    if rl.get("status") == "failed" and rl.get("error_message"):
+                        ad_failures.append(f"{rl.get('company_name')}: {rl.get('error_message')}")
+
+        if is_scanning:
+            ad_state = "running"
+        elif ad_failures:
+            ad_state = "error" if len(ad_failures) >= p_count and p_count > 0 else "warning"
+        elif p_count > 0:
+            ad_state = "success"
+        else:
+            ad_state = "idle"
+
+        adapters_breakdown[aid] = {
+            "id": aid,
+            "label": ad["label"],
+            "portals": p_count,
+            "jobs_found": ad_jobs,
+            "state": ad_state,
+            "failures": ad_failures,
+        }
 
     adapter_err: Optional[str] = None
     if is_scanning:
@@ -197,6 +320,7 @@ async def get_pipeline_state() -> PipelineStateResponse:
         meta={
             "total_found": last_report.total_jobs_found if last_report else (recent_logs[0].get("jobs_found", 0) if recent_logs else 0),
             "supported_adapters": ["greenhouse", "lever", "ashby", "workday", "fallback"],
+            "adapters_breakdown": adapters_breakdown,
             "recent_logs_count": len(recent_logs),
         },
         error=adapter_err,
@@ -335,4 +459,5 @@ async def get_pipeline_state() -> PipelineStateResponse:
             "database": database_node,
             "telegram": telegram_node,
         },
+        last_cycle=last_cycle,
     )

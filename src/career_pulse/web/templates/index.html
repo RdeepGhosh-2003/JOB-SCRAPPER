@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerPulse — Local Career Portal Job Tracker</title>
-    <link rel="stylesheet" href="/static/app.css?v=12">
+    <link rel="stylesheet" href="/static/app.css?v=13">
 </head>
 <body>
     <div class="app-layout">
@@ -187,12 +187,17 @@
                                 <span class="status-dot green" id="pipeline-refresh-dot"></span>
                                 <span id="pipeline-refresh-text">Auto-refresh: 15s</span>
                             </span>
+                            <button class="btn btn-primary" id="btn-pipeline-run-scan" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span>Run Pipeline Now</span>
+                            </button>
                             <button class="btn btn-secondary" onclick="loadPipeline()">
                                 ↻ Refresh Now
                             </button>
                         </div>
                     </div>
                     <div class="card-body">
+                        <div id="pipeline-cycle-summary" class="pipeline-summary-bar"></div>
                         <div class="pipeline-flow" id="pipeline-flow">
                             <p class="text-muted text-center py-4">Loading pipeline stages...</p>
                         </div>
@@ -527,6 +532,6 @@
         </main>
     </div>
 
-    <script src="/static/app.js?v=12"></script>
+    <script src="/static/app.js?v=13"></script>
 </body>
 </html>

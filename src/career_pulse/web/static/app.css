@@ -995,5 +995,237 @@ details.accordion .accordion-body {
     word-break: break-word;
 }
 
+/* Pipeline Telemetry Summary Bar */
+.pipeline-summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.pipeline-summary-group {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+.summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+.summary-pill strong {
+    color: var(--primary);
+}
+
+/* Diagnostic Meta Chips */
+.pipeline-meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.65rem;
+}
+.meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.74rem;
+    font-weight: 500;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+.meta-chip strong {
+    color: var(--text-main);
+}
+
+/* Contextual Jump-to-Fix Action Buttons */
+.node-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+}
+.node-action-btn:hover {
+    background: rgba(56, 189, 248, 0.18);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+/* Expandable Failing Portals Drawer */
+.failing-portals-toggle {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.failing-portals-toggle:hover {
+    color: #fca5a5;
+}
+.failing-portals-drawer {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.failing-portal-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.78rem;
+}
+.failing-portal-item:last-child {
+    border-bottom: none;
+}
+.failing-portal-name {
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 90px;
+}
+.failing-portal-ats {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    background: var(--bg-surface-hover);
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.failing-portal-err {
+    color: var(--danger);
+    word-break: break-word;
+    flex: 1;
+}
+
+/* Branch & Fan-Out Headers */
+.pipeline-branch-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    margin: 0.4rem 0;
+    user-select: none;
+}
+
+/* Parallel ATS Adapters Fan-Out Grid */
+.adapter-fanout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.65rem;
+    width: 100%;
+    margin: 0.25rem 0;
+}
+.pipeline-flow.horizontal .adapter-fanout-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 200px;
+}
+.adapter-subcard {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.65rem 0.75rem;
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.adapter-subcard.sub-success {
+    border-color: rgba(52, 211, 153, 0.4);
+}
+.adapter-subcard.sub-warning {
+    border-color: rgba(251, 191, 36, 0.4);
+}
+.adapter-subcard.sub-error {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.08);
+}
+.adapter-subcard.sub-running {
+    border-color: var(--primary);
+}
+.adapter-subcard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.adapter-subcard-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.adapter-subcard-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* Parallel Dual Output Fork (Database & Telegram) */
+.pipeline-dag-fork {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+.pipeline-flow.horizontal .pipeline-dag-fork {
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    gap: 0.65rem;
+}
+@media (max-width: 600px) {
+    .pipeline-dag-fork {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 
