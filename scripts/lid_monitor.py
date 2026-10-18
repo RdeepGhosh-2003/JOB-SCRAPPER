@@ -20,6 +20,12 @@ WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPA
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
 
+kernel32.CreateMutexW.argtypes = [wintypes.LPVOID, wintypes.BOOL, wintypes.LPCWSTR]
+kernel32.CreateMutexW.restype = wintypes.HANDLE
+kernel32.GetLastError.restype = wintypes.DWORD
+
+_lid_mutex = None
+
 user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
 user32.DefWindowProcW.restype = LRESULT
 
@@ -89,8 +95,9 @@ def wnd_proc(hwnd, msg, wparam, lparam):
 
 def main():
     # Ensure single instance via Win32 Named Mutex
+    global _lid_mutex
     ERROR_ALREADY_EXISTS = 183
-    mutex = kernel32.CreateMutexW(None, False, "CareerPulseLidMonitorMutex")
+    _lid_mutex = kernel32.CreateMutexW(None, False, "CareerPulseLidMonitorMutex")
     if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
         return
 
