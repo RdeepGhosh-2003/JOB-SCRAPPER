@@ -1080,7 +1080,7 @@ function renderActionBtn(key) {
     return `<button type="button" class="node-action-btn" onclick="switchTab('${act.tab}')">${act.label}</button>`;
 }
 
-function renderNodeCard(key, node, isScanning) {
+function renderNodeCard(key, node, isScanning, ports = {}) {
     if (!node) return "";
     const state = isScanning ? "running" : (node.state || "idle").toLowerCase();
     const nodeClass = `pipeline-node node-${state}`;
@@ -1115,8 +1115,22 @@ function renderNodeCard(key, node, isScanning) {
     const metaChipsHtml = renderMetaChips(key, node.meta);
     const actionBtnHtml = renderActionBtn(key);
 
+    let leftPortHtml = "";
+    if (ports.left) {
+        const portState = ports.leftState || state;
+        leftPortHtml = `<span class="dag-port port-left port-${portState}"></span>`;
+    }
+
+    let rightPortHtml = "";
+    if (ports.right) {
+        const portState = ports.rightState || state;
+        rightPortHtml = `<span class="dag-port port-right port-${portState}"></span>`;
+    }
+
     return `
         <div class="${nodeClass}">
+            ${leftPortHtml}
+            ${rightPortHtml}
             <div class="pipeline-node-header">
                 <div class="pipeline-node-title-group">
                     <span class="pipeline-node-dot"></span>
@@ -1133,8 +1147,12 @@ function renderNodeCard(key, node, isScanning) {
     `;
 }
 
-function renderAdapterFanOut(breakdown, isScanning) {
-    if (!breakdown) return "";
+function renderStage2Matrix(adapterNode, isScanning) {
+    if (!adapterNode) return "";
+    const meta = adapterNode.meta || {};
+    const breakdown = meta.adapters_breakdown || {};
+    const state = isScanning ? "running" : (adapterNode.state || "idle").toLowerCase();
+
     const adapters = [
         { id: "greenhouse", name: "Greenhouse API" },
         { id: "lever", name: "Lever API" },
@@ -1143,27 +1161,126 @@ function renderAdapterFanOut(breakdown, isScanning) {
         { id: "fallback", name: "Fallback Scraper" },
     ];
 
-    const cards = adapters.map(ad => {
+    const rows = adapters.map(ad => {
         const item = breakdown[ad.id] || { state: "idle", portals: 0, jobs_found: 0, failures: [] };
-        const state = isScanning ? "running" : (item.state || "idle");
-        const dotColor = state === "success" ? "var(--success)" : state === "error" ? "var(--danger)" : state === "warning" ? "var(--warning)" : state === "running" ? "var(--primary)" : "var(--text-muted)";
-        const pulseClass = state === "running" ? "pulse" : "";
+        const rowState = isScanning ? "running" : (item.state || "idle");
+        const dotColor = rowState === "success" ? "var(--success)" : rowState === "error" ? "var(--danger)" : rowState === "warning" ? "var(--warning)" : rowState === "running" ? "var(--primary)" : "var(--text-muted)";
+        const pulseClass = rowState === "running" ? "pulse" : "";
 
         return `
-            <div class="adapter-subcard sub-${state}">
-                <div class="adapter-subcard-header">
+            <div class="adapter-matrix-row row-${rowState}">
+                <span class="dag-port port-left port-${rowState}"></span>
+                <span class="dag-port port-right port-${rowState}"></span>
+                <div class="adapter-row-name">
+                    <span class="adapter-row-dot ${pulseClass}" style="background-color: ${dotColor};"></span>
                     <span>${escapeHtml(ad.name)}</span>
-                    <span class="adapter-subcard-dot ${pulseClass}" style="background-color: ${dotColor};"></span>
+                    <span class="text-muted" style="font-size: 0.7rem;">(${item.portals || 0})</span>
                 </div>
-                <div class="adapter-subcard-stats">
-                    <span>${item.portals || 0} Portals</span>
-                    <strong>${item.jobs_found || 0} jobs</strong>
-                </div>
+                <span class="adapter-row-count">${item.jobs_found || 0} jobs</span>
             </div>
         `;
     });
 
-    return `<div class="adapter-fanout-grid">${cards.join("")}</div>`;
+    const actionBtnHtml = renderActionBtn("adapter");
+
+    return `
+        <div class="adapter-matrix-card node-${state}">
+            <div>
+                <div class="pipeline-node-header">
+                    <div class="pipeline-node-title-group">
+                        <span class="pipeline-node-dot"></span>
+                        <strong class="pipeline-node-title">ATS Extraction Matrix</strong>
+                    </div>
+                    <span class="pipeline-state-badge state-${state}">${escapeHtml(state.toUpperCase())}</span>
+                </div>
+                <div class="pipeline-node-detail" style="font-size: 0.8rem; margin-bottom: 0.4rem;">
+                    Parallel execution across 5 extraction protocols (${meta.total_found !== undefined ? meta.total_found : 0} total jobs found).
+                </div>
+                <div class="adapter-matrix-rows">
+                    ${rows.join("")}
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.25rem;">
+                <span class="text-muted" style="font-size: 0.72rem;">Concurrency: <strong>Semaphore(5)</strong></span>
+                ${actionBtnHtml}
+            </div>
+        </div>
+    `;
+}
+
+function renderSvgLane1(isScanning, breakdown, layout) {
+    if (layout === "vertical") {
+        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
+        return `
+            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+                <path class="${pathClass}" d="M 100 0 L 100 36" />
+            </svg>
+        `;
+    }
+
+    const targets = [45, 85, 125, 165, 205];
+    const adapters = ["greenhouse", "lever", "ashby", "workday", "fallback"];
+    const paths = targets.map((ty, idx) => {
+        const adId = adapters[idx];
+        const adState = breakdown && breakdown[adId] ? breakdown[adId].state : "idle";
+        const stateClass = isScanning ? "flow-pulse path-running" : (adState === "error" ? "path-error" : adState === "warning" ? "path-warning" : "path-success");
+        return `<path class="dag-path ${stateClass}" d="M 0 210 C 22 210, 22 ${ty}, 44 ${ty}" />`;
+    });
+
+    return `
+        <svg viewBox="0 0 44 280" preserveAspectRatio="none">
+            ${paths.join("")}
+        </svg>
+    `;
+}
+
+function renderSvgLane2(isScanning, breakdown, layout) {
+    if (layout === "vertical") {
+        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
+        return `
+            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+                <path class="${pathClass}" d="M 100 0 L 100 36" />
+            </svg>
+        `;
+    }
+
+    const sources = [45, 85, 125, 165, 205];
+    const adapters = ["greenhouse", "lever", "ashby", "workday", "fallback"];
+    const paths = sources.map((sy, idx) => {
+        const adId = adapters[idx];
+        const adState = breakdown && breakdown[adId] ? breakdown[adId].state : "idle";
+        const stateClass = isScanning ? "flow-pulse path-running" : (adState === "error" ? "path-error" : adState === "warning" ? "path-warning" : "path-success");
+        return `<path class="dag-path ${stateClass}" d="M 0 ${sy} C 22 ${sy}, 22 140, 44 140" />`;
+    });
+
+    return `
+        <svg viewBox="0 0 44 280" preserveAspectRatio="none">
+            ${paths.join("")}
+        </svg>
+    `;
+}
+
+function renderSvgLane3(isScanning, dbNode, tgNode, layout) {
+    if (layout === "vertical") {
+        const pathClass = `dag-path ${isScanning ? 'flow-pulse path-running' : 'path-success'}`;
+        return `
+            <svg viewBox="0 0 200 36" preserveAspectRatio="none">
+                <path class="${pathClass}" d="M 100 0 L 100 36" />
+            </svg>
+        `;
+    }
+
+    const dbState = dbNode ? dbNode.state : "idle";
+    const tgState = tgNode ? tgNode.state : "idle";
+    const dbClass = isScanning ? "flow-pulse path-running" : (dbState === "error" ? "path-error" : "path-success");
+    const tgClass = isScanning ? "flow-pulse path-running" : (tgState === "error" ? "path-error" : "path-success");
+
+    return `
+        <svg viewBox="0 0 44 280" preserveAspectRatio="none">
+            <path class="dag-path ${dbClass}" d="M 0 140 C 22 140, 22 70, 44 70" />
+            <path class="dag-path ${tgClass}" d="M 0 140 C 22 140, 22 210, 44 210" />
+        </svg>
+    `;
 }
 
 function renderSummaryBar(lastCycle) {
@@ -1231,62 +1348,70 @@ async function loadPipeline() {
         // 2. Render Telemetry Summary Bar
         renderSummaryBar(data.last_cycle);
 
-        // 3. Render DAG Flowchart with Parallel Branches
+        // 3. Render Hybrid 4-Stage DAG Flowchart with SVG Bezier Connectors
         if (flowContainer && data.nodes) {
             flowContainer.className = `pipeline-flow ${currentPipelineLayout}`;
-            const arrow = currentPipelineLayout === "horizontal" ? "→" : "↓";
-            const fragments = [];
-
-            // Stage 1: Scheduler
-            fragments.push(renderNodeCard("scheduler", data.nodes.scheduler, data.is_scanning));
-            fragments.push(`<div class="pipeline-connector">${arrow}</div>`);
-
-            // Stage 2: Company Portals
-            fragments.push(renderNodeCard("companies", data.nodes.companies, data.is_scanning));
-
-            // Fan-out connector to parallel ATS adapters
-            fragments.push(`
-                <div class="pipeline-branch-header">⚡ Parallel ATS Extraction (Fan-Out)</div>
-                <div class="pipeline-connector">${arrow}</div>
-            `);
-
-            // Stage 3: ATS Adapters & Parallel Fan-out Grid
-            const adapterCard = renderNodeCard("adapter", data.nodes.adapter, data.is_scanning);
             const adaptersBreakdown = (data.nodes.adapter && data.nodes.adapter.meta) ? data.nodes.adapter.meta.adapters_breakdown : null;
-            const fanOutHtml = renderAdapterFanOut(adaptersBreakdown, data.is_scanning);
-            fragments.push(`
-                <div style="width: 100%; display: flex; flex-direction: column; gap: 0.65rem;">
-                    ${adapterCard}
-                    ${fanOutHtml}
+
+            const compState = (data.nodes.companies && data.nodes.companies.state) || "idle";
+            const matcherState = (data.nodes.matcher && data.nodes.matcher.state) || "idle";
+            const dbState = (data.nodes.database && data.nodes.database.state) || "idle";
+            const tgState = (data.nodes.telegram && data.nodes.telegram.state) || "idle";
+
+            flowContainer.innerHTML = `
+                <!-- Stage 1: Ingestion & Portals -->
+                <div class="pipeline-stage-col stage-col-1">
+                    <div class="pipeline-stage-header">
+                        <span>1. Ingestion & Portals</span>
+                        <span class="pipeline-stage-badge">2 Steps</span>
+                    </div>
+                    ${renderNodeCard("scheduler", data.nodes.scheduler, data.is_scanning, {})}
+                    ${renderNodeCard("companies", data.nodes.companies, data.is_scanning, { right: true, rightState: compState })}
                 </div>
-            `);
 
-            // Fan-in connector to Job Matcher
-            fragments.push(`
-                <div class="pipeline-branch-header">⚡ Unified Matching (Fan-In)</div>
-                <div class="pipeline-connector">${arrow}</div>
-            `);
-
-            // Stage 4: Job Matcher
-            fragments.push(renderNodeCard("matcher", data.nodes.matcher, data.is_scanning));
-
-            // Dual output fork connector
-            fragments.push(`
-                <div class="pipeline-branch-header">⚡ Parallel Dual Output (Persistence & Alerting)</div>
-                <div class="pipeline-connector">${arrow}</div>
-            `);
-
-            // Stage 5: Parallel Dual Output Fork (SQLite Database & Telegram Alerts)
-            const dbCard = renderNodeCard("database", data.nodes.database, data.is_scanning);
-            const tgCard = renderNodeCard("telegram", data.nodes.telegram, data.is_scanning);
-            fragments.push(`
-                <div class="pipeline-dag-fork">
-                    ${dbCard}
-                    ${tgCard}
+                <!-- SVG Connector 1: Bezier Fan-Out -->
+                <div class="dag-bezier-lane lane-1">
+                    ${renderSvgLane1(data.is_scanning, adaptersBreakdown, currentPipelineLayout)}
                 </div>
-            `);
 
-            flowContainer.innerHTML = fragments.join("");
+                <!-- Stage 2: Parallel ATS Extraction Matrix -->
+                <div class="pipeline-stage-col stage-col-2">
+                    <div class="pipeline-stage-header">
+                        <span>2. Extraction Matrix</span>
+                        <span class="pipeline-stage-badge">5 Workers</span>
+                    </div>
+                    ${renderStage2Matrix(data.nodes.adapter, data.is_scanning)}
+                </div>
+
+                <!-- SVG Connector 2: Bezier Fan-In -->
+                <div class="dag-bezier-lane lane-2">
+                    ${renderSvgLane2(data.is_scanning, adaptersBreakdown, currentPipelineLayout)}
+                </div>
+
+                <!-- Stage 3: Evaluation Engine -->
+                <div class="pipeline-stage-col stage-col-3">
+                    <div class="pipeline-stage-header">
+                        <span>3. Evaluation Engine</span>
+                        <span class="pipeline-stage-badge">Matcher</span>
+                    </div>
+                    ${renderNodeCard("matcher", data.nodes.matcher, data.is_scanning, { left: true, right: true, leftState: matcherState, rightState: matcherState })}
+                </div>
+
+                <!-- SVG Connector 3: Bezier Fork -->
+                <div class="dag-bezier-lane lane-3">
+                    ${renderSvgLane3(data.is_scanning, data.nodes.database, data.nodes.telegram, currentPipelineLayout)}
+                </div>
+
+                <!-- Stage 4: Dual Outputs -->
+                <div class="pipeline-stage-col stage-col-4">
+                    <div class="pipeline-stage-header">
+                        <span>4. Dual Outputs</span>
+                        <span class="pipeline-stage-badge">Parallel Sinks</span>
+                    </div>
+                    ${renderNodeCard("database", data.nodes.database, data.is_scanning, { left: true, leftState: dbState })}
+                    ${renderNodeCard("telegram", data.nodes.telegram, data.is_scanning, { left: true, leftState: tgState })}
+                </div>
+            `;
         }
 
         // 4. Dynamic polling: 3s if is_scanning: true, falling back to 15s when idle
