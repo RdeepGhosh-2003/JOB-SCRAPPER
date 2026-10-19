@@ -140,8 +140,11 @@ class ScanPipeline:
             target = identifier or career_url
             if provider == "workday":
                 career_site = company.get("career_site")
+                # For Workday, prefer career_url because it contains the exact datacenter pod (e.g. wd1, wd3)
+                # and career site slug, preventing DNS resolution failure on the bare tenant name.
+                workday_target = career_url if (career_url and "myworkdayjobs.com" in career_url) else target
                 jobs = await self._workday_adapter.fetch_jobs(
-                    company_identifier=target,
+                    company_identifier=workday_target,
                     career_site=career_site or "",
                     company_name=comp_name,
                 )
